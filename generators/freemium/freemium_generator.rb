@@ -41,6 +41,11 @@ class FreemiumGenerator < Rails::Generator::NamedBase
                   File.join('app/models',
                             subscription_class_path,
                             "#{subscription_file_name}.rb")
+
+      m.template 'subscription_plan_model.rb',
+                  File.join('app/models',
+                            subscription_class_path,
+                            "#{subscription_file_name}_plan.rb")
       
     end
     
