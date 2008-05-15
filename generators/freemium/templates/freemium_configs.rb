@@ -15,7 +15,7 @@ Freemium.gateway.password = "password"
 #
 #if you want to use the gateways recuring payment system
 #  use :arb
-Freemium.billing_control = :freemium
+Freemium.billing_controller = :freemium
 
 #the grace period, in days, before Freemium triggers additional mails 
 #for the client.  Defaults to 3

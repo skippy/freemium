@@ -28,7 +28,9 @@ class FreemiumGenerator < Rails::Generator::NamedBase
 
   def manifest
     migration_file_name = "create_#{subscription_file_name.gsub(/\//, '_').pluralize}_and_plans"
-
+    subscription_model_fullpath = File.join('app/models', subscription_class_path, "#{subscription_file_name}.rb")
+    
+    
     recorded_session = record do |m|
       # m.migration_template "migration.rb", "db/migrate", :migration_file_name => "create_subscription_and_plan"
       m.migration_template 'migration.rb', 'db/migrate', :assigns => {
@@ -37,10 +39,7 @@ class FreemiumGenerator < Rails::Generator::NamedBase
       
       
       m.template 'freemium_configs.rb', "config/initializers/freemium.rb"
-      m.template 'subscription_model.rb',
-                  File.join('app/models',
-                            subscription_class_path,
-                            "#{subscription_file_name}.rb")
+      m.template 'subscription_model.rb', subscription_model_fullpath
 
       m.template 'subscription_plan_model.rb',
                   File.join('app/models',
@@ -55,6 +54,8 @@ class FreemiumGenerator < Rails::Generator::NamedBase
     puts
     puts "  review db/migrate/#{migration_file_name}"
     puts "  then run 'rake db:migrate'"
+    puts "  You will find integration instructions within your model here:"
+    puts "    #{subscription_model_fullpath}"
     puts ("-" * 70)
     
     #need to end with this...

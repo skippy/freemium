@@ -49,10 +49,10 @@ So there's some possible slack in the timeline. Suppose a subscription is paid t
 
 3) Create config/initializers/freemium.rb and configure at least the following:
 
-  gateway         pick one, then see rdoc for your gateway's options to see what needs to be configured (api key, etc.)
-  billing_control set to :full or :arb, depending on whether you're using your gateway's ARB module
-  days_grace      in days, zero days grace is ok
-  mailer          for customized invoices, etc.
+  gateway            pick one, then see rdoc for your gateway's options to see what needs to be configured (api key, etc.)
+  billing_controller set to :full or :arb, depending on whether you're using your gateway's ARB module
+  days_grace         in days, zero days grace is ok
+  mailer             for customized invoices, etc.
 
 4) Create a SubscriptionsController (or similar) that does whatever it takes to get a unique billing key. This might mean storing the credit card (e.g. TrustCommerce Citadel) and/or setting up automated recurring billing, or getting the three keys from Amazon FPS. Most of these gateways don't have concrete API classes in Freemium yet. If you write a gateway, let me know and I'll include it.
 

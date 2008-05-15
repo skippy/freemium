@@ -27,12 +27,6 @@ module Freemium
       save!
     end
 
-    # sends an invoice for the specified amount. note that this is an after-the-fact
-    # invoice.
-    def send_invoice(amount)
-      Freemium.mailer.deliver_invoice(subscribable, self, amount)
-    end
-
     ##
     ## Remaining Time
     ##
@@ -45,7 +39,7 @@ module Freemium
 
     # if paid through today, returns zero
     def remaining_days
-      self.paid_through - Date.today
+      (self.paid_through - Date.today).to_i rescue 0
     end
 
     ##
@@ -54,7 +48,7 @@ module Freemium
 
     # if under grace through today, returns zero
     def remaining_days_of_grace
-      self.expire_on - Date.today - 1
+      self.expire_on.blank? ? 0 : self.expire_on - Date.today - 1
     end
 
     def in_grace?
@@ -108,6 +102,7 @@ module Freemium
     # NOTE: Support for updating an address could easily be added
     # with an "address" property on the credit card.
     def credit_card=(cc)
+      cc = Freemium::CreditCard.new(cc) if cc.is_a?(Hash)
       response = (billing_key) ? Freemium.gateway.update(billing_key, cc) : Freemium.gateway.store(cc)
       raise Freemium::CreditCardStorageError.new(response.message) unless response.success?
       self.billing_key = response.billing_key
@@ -136,7 +131,8 @@ module Freemium
 
       Freemium.activity_log[self] << "now paid through #{self.paid_through}" if Freemium.log?
 
-      send_invoice(value)
+      # sends an invoice for the specified amount.
+      Freemium.mailer.deliver_invoice(subscribable, self, value)
     end
 
     def set_paid_through

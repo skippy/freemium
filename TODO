@@ -1,0 +1,13 @@
+* Generators for the SubscriptionMailer
+* coupon/referal code system (needed by Adam)
+* build in a trial state?  This can happen at the payment or user model level.... OR we just default the user to pay in the next period
+* do we want to save the response messages, params sent out, price, and other details in the table?  The advantage of doing that is we can version it and have a history of all transactions rather than relying upon BrainTree and querying it
+* hook in acts_as_versioned and acts_as_paranoid during generation time?  (adam wants to show payment history on the site)
+* store last 4 cc digits and type, to display back to user?
+* a list of supported card types for the gateway
+
+
+DISCUSSION POINTS
+* do we really want to have a separate gateway rather than wrapping activeMerchant?
+* do we need wrappers around subscription and subscription_plan?  I'm not so sure..... though it does come in handy if a user wants to customize the class without having to change the plugin.  Then again, it makes it hard to see what the hell is going on and what is available!
+
