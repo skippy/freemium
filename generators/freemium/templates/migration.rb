@@ -1,14 +1,13 @@
-class <%= migration_name %> < ActiveRecord::Migration
+class CreateFreemiumMigrations < ActiveRecord::Migration
   def self.up
     create_table "<%= subscription_singular_name %>_plans", :force => true do |t|
       t.column :name, :string, :null => false
       t.column :rate_cents, :integer, :null => false
-      t.column :yearly, :boolean, :null => false
+      t.column :yearly, :boolean, :default => false
     end
 
     create_table "<%= subscription_plural_name %>", :force => true do |t|
       t.column :subscribable_id, :integer, :null => false
-      t.column :subscribable_type, :string, :null => false
       t.column "<%= subscription_singular_name %>_plan_id", :integer, :null => false
       t.column :paid_through, :date, :null => false
       t.column :expire_on, :date, :null => true
@@ -16,9 +15,8 @@ class <%= migration_name %> < ActiveRecord::Migration
       t.column :last_transaction_at, :datetime, :null => true
     end
 
-    # for polymorphic association queries
+    # for association queries
     add_index "<%= subscription_plural_name %>", :subscribable_id
-    add_index "<%= subscription_plural_name %>", :subscribable_type
 
     # for finding due, pastdue, and expiring subscriptions
     add_index "<%= subscription_plural_name %>", :paid_through
@@ -26,10 +24,42 @@ class <%= migration_name %> < ActiveRecord::Migration
 
     # for applying transactions from automated recurring billing
     add_index "<%= subscription_plural_name %>", :billing_key
+    
+    
+    create_table "<%= coupon_plural_name %>", :force => true do |t|
+      t.column :name, :string, :null => false
+      t.column :coupon_code, :string, :null => false
+      t.column :discount_rate_percent, :integer, :null => false
+      t.column :span_num_days, :integer, :null => false
+      t.column :usage_limit, :integer, :default => 0
+      t.column :usage_counter, :integer, :default => 0
+      t.column :expire_on, :date
+      t.column :created_at, :datetime
+    end
+    
+    create_table "<%= user_singular_name %>_<%= coupon_singular_name %>_referrals", :force => true do |t|
+      t.column "<%= subscription_singular_name %>_plan_id", :integer, :null => false
+      t.column "<%= coupon_singular_name %>_id", :integer
+      t.column "referring_<%= user_singular_name %>_id", :integer
+      t.column :applied_on, :date
+    end
+     
+    #lets add the referral code column to the user model
+    add_column "<%= user_plural_name %>", :referral_key, :string
+    <%= user_class_name %>.reset_column_information
+    <%= user_class_name %>.send(:extend, Freemium::Acts::Subscribable::SingletonMethods)
+    <%= user_class_name %>.setup_referral_keys!
+    
   end
 
   def self.down
     drop_table "<%= subscription_singular_name %>_plans"
     drop_table "<%= subscription_plural_name %>"
+    
+    drop_table "<%= coupon_plural_name %>"    
+    drop_table "<%= user_singular_name %>_<%= coupon_singular_name %>_referrals"
+    
+    remove_column "<%= user_plural_name %>", :referral_key
+    
   end
 end

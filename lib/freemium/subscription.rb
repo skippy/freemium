@@ -8,9 +8,9 @@
 module Freemium
   class Subscription < ActiveRecord::Base
     belongs_to :subscription_plan
-    belongs_to :subscribable, :polymorphic => true
 
     before_validation :set_paid_through
+    before_save :process_cc
     after_destroy :cancel_in_remote_system
 
     validates_presence_of :subscribable
@@ -102,14 +102,18 @@ module Freemium
     # NOTE: Support for updating an address could easily be added
     # with an "address" property on the credit card.
     def credit_card=(cc)
-      cc = Freemium::CreditCard.new(cc) if cc.is_a?(Hash)
-      response = (billing_key) ? Freemium.gateway.update(billing_key, cc) : Freemium.gateway.store(cc)
-      raise Freemium::CreditCardStorageError.new(response.message) unless response.success?
-      self.billing_key = response.billing_key
-      return cc
+      @cc = Freemium::CreditCard.new(cc) if cc.is_a?(Hash)
     end
 
     protected
+    
+    def process_cc
+      return true unless @cc
+      response = (billing_key) ? Freemium.gateway.update(billing_key, @cc) : Freemium.gateway.store(@cc)
+      raise Freemium::CreditCardStorageError.new(response.message) unless response.success?
+      self.billing_key = response.billing_key
+      return true
+    end
 
     # extends the paid_through period according to how much money was received.
     # when possible, avoids the days-per-month problem by checking if the money

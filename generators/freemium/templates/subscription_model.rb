@@ -1,8 +1,5 @@
 class <%= subscription_class_name %> < Freemium::Subscription
-  # Freemium requires the user object to be attached to the subscription model.  Please create the relationship HERE:
-  # belongs_to :user, :foreign_key => "subscribable_id" 
-  # In your user model, you might want to add
-  # has_one :<%= subscription_singular_name %>, :dependent => :destroy
+  belongs_to :subscribable, :class_name => '<%= user_class_name %>'
 
 
   #A list of helpful methods that are inherited are listed below.
