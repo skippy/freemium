@@ -5,6 +5,7 @@
 #   billing_key:          the id for this user in the remote billing gateway. may not exist if user is on a free plan.
 #   last_transaction_at:  when the last gateway transaction was for this account. this is used by your gateway to find "new" transactions.
 #
+module Freemium
 class Subscription < ActiveRecord::Base
   belongs_to :subscription_plan
   belongs_to :subscribable, :polymorphic => true
@@ -145,4 +146,5 @@ class Subscription < ActiveRecord::Base
   def cancel_in_remote_system
     Freemium.gateway.cancel(self.billing_key)
   end
+end
 end
