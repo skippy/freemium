@@ -1,4 +1,4 @@
-# Sample configuration, but this will get you bootstrapped and going with BrainTree
+# Sample configuration, but this will get you bootstrapped with BrainTree
 # TODO:
 #  - information on where to register...
 #  - setting up production passwords...
@@ -7,6 +7,21 @@
 Freemium.gateway = Freemium::Gateways::BrainTree.new
 Freemium.gateway.username = "demo"
 Freemium.gateway.password = "password"
+
+#If you want Freemium to take care of the billing itself 
+#  (ie, handle everything within your app, with recurring payments via cron 
+#  or some other batch job)
+#  use :freemium
+#
+#if you want to use the gateways recuring payment system
+#  use :arb
+Freemium.billing_control = :freemium
+
+#the grace period, in days, before Freemium triggers additional mails 
+#for the client.  Defaults to 3
+Freemium.days_grace = 3
+
+##### SEE Freemium for additional choices
 
 if RAILS_ENV == 'production'
   #put your production password information here....
