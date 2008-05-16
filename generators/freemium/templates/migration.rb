@@ -10,6 +10,10 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
       t.column :subscribable_id, :integer, :null => false
       t.column "<%= subscription_singular_name %>_plan_id", :integer, :null => false
       t.column :paid_through, :date, :null => false
+      t.column :cc_digits_last_4, :integer, :limit => 4
+      t.column :cc_type,          :string, :limit => 25
+      
+      
       t.column :expire_on, :date, :null => true
       t.column :comped, :boolean, :default => false
       t.column :billing_key, :string, :null => true

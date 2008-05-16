@@ -28,7 +28,7 @@ module Freemium
           validates_uniqueness_of :referral_code, :case_sensitive => false, :allow_blank => true
           validates_format_of     :referral_code, :with => /\A#{Freemium.referral_code_prefix}/, :message => "must start with '#{Freemium.referral_code_prefix}'"
           
-          validate :validate_comps
+          before_save :prep_comps
           after_save :save_reffering_users_comp
 
 
@@ -118,8 +118,9 @@ module Freemium
         
         protected
 
-        def validate_comps
+        def prep_comps
           return true unless @comp_code
+puts "about prep_comps-1"
           if @comp_code.start_with?(Freemium.referral_code_prefix)
             #lets check referrals
             u = User.find_by_referral_code(@comp_code)
@@ -144,6 +145,7 @@ module Freemium
             else #do some sort of signup check.... 
               
             end
+puts "about prep_comps-2"
               
             
             
@@ -151,11 +153,13 @@ module Freemium
             
             #apply to the subscription o the current user
             eval("self.#{acts_as_subscribable_options[:coupon_referrals_model_name]}.build(:referring_user_id => u.id, :#{acts_as_subscribable_options[:subcription_model_name]} => subscription, :free_days => Freemium.referral_days_for_applied_user)")
+puts "about prep_comps-3"
             
             #apply to the subscription of the referring user
             unless u.subscription.blank?
               #should never have a blank subscription, but just in 
               @referring_users_comp = eval("u.#{acts_as_subscribable_options[:coupon_referrals_model_name]}.build(:referring_user_id => u.id, :#{acts_as_subscribable_options[:subcription_model_name]} => u.subscription, :free_days => Freemium.referral_days_for_referred_user)")
+puts "about prep_comps-4"
             end
           else
             c = Coupon.find_by_coupon_code(@comp_code)

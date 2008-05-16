@@ -1,6 +1,4 @@
 class <%= subscription_class_name %>Mailer < ActionMailer::Base
-  self.template_root = File.dirname(__FILE__)
-
   def invoice(user, subscription, amount)
     setup_email(user)
     @subject              = "Your Invoice"

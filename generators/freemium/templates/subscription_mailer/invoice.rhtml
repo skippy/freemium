@@ -1,5 +1,40 @@
-Thanks for paying!
+Thank you for using SweetSpot.
 
-  Your Plan: <%= @subscription.subscription_plan.name %> (<%= @subscription.subscription_plan.rate %>/<%= @subscription.subscription_plan.yearly? ? "year" : "month" %>)
-  Paid: <%= @amount %>
-  Paid Through: <%= @subscription.paid_through.to_s %>
+This is an INVOICE for your SweetSpot Team account
+#### ACCOUNT url HERE
+
+SUMMARY
+Your credit card (xxxx-xxxx-xxxx-<%= @subscription.cc_digits_last_4 -%>) has been charged $<%= @amount %>.  
+This charge covers your account until <%= @subscription.paid_through.to_s(:long_date) -%>. You will be billed again at that time for the next month.
+
+============================================================
+INVOICE   <%= @subscription.previously_paid_on.to_s(:long_date) %>
+............................................................
+
+SweetSpot -- Diabetes wellness for the family
+6 Bar 8, LLC.
+2538 NE 48th Ave
+Portland, OR 97213
+503-922-2223
+
+Quantity     Description                              Price
+------------------------------------------------------------
+1 <%= @subscription.subscription_plan.yearly? ? "year" : "month" %>      SweetSpot <%= @subscription.subscription_plan.name %> Plan                   $<%= @amount %>
+             From <%= @subscription.previously_paid_on.to_s(:short_date) -%> to <%= @subscription.paid_through.to_s(:short_date) %>.
+
+                                      ======================
+                                         Amount PAID: $<%= @amount %>
+                    Credit card billed: xxxx-xxxx-xxxx-<%= @subscription.cc_digits_last_4 %>
+============================================================
+
+
+NEED TO CANCEL?
+If you wish to cancel your SweetSpot account, please visit:
+### CANCEL URL HERE?
+
+QUESTIONS OR CONCERNS?
+Respond to this email if you have any billing questions.
+
+Thank you again for your business!
+The SweetSpot Team
+https://www.SweetSpot.dm

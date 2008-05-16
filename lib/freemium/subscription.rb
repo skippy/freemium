@@ -17,6 +17,8 @@ module Freemium
     validates_presence_of :subscription_plan
     validates_presence_of :paid_through
 
+    attr_reader :previously_paid_on
+
     ##
     ## Receiving More Money
     ##
@@ -57,7 +59,10 @@ module Freemium
       saved
     end
 
-    
+    def paid_through=(time)
+      @previously_paid_on = self.paid_through
+      self[:paid_through] = time
+    end
 
     ##
     ## Remaining Time
@@ -73,7 +78,7 @@ module Freemium
     def remaining_days
       (self.paid_through - Date.today).to_i rescue 0
     end
-
+    
     ##
     ## Grace Period
     ##
@@ -144,6 +149,8 @@ module Freemium
       response = (billing_key) ? Freemium.gateway.update(billing_key, @cc) : Freemium.gateway.store(@cc)
       raise Freemium::CreditCardStorageError.new(response.message) unless response.success?
       self.billing_key = response.billing_key
+      self.cc_digits_last_4 = @cc.last_digits
+      self.cc_type = @cc.type
       return true
     end
 
