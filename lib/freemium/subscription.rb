@@ -7,6 +7,7 @@
 #
 module Freemium
   class Subscription < ActiveRecord::Base
+    set_table_name 'freemium_subscriptions'
     belongs_to :subscription_plan
 
     before_validation :set_paid_through

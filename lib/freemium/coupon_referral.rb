@@ -1,5 +1,6 @@
 module Freemium
-  class UserCouponReferral < ActiveRecord::Base
+  class CouponReferral < ActiveRecord::Base
+    set_table_name 'freemium_coupon_referrals'
 
     validates_presence_of :subscription_id, :free_days
     validates_presence_of :coupon_id, :if => Proc.new{|model| model.referring_user_id.nil?}

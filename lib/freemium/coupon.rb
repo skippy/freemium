@@ -1,5 +1,6 @@
 module Freemium
   class Coupon < ActiveRecord::Base
+    set_table_name 'freemium_coupons'
 
     validate :valid_coupon_code
 
