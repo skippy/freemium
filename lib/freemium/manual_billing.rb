@@ -9,6 +9,7 @@ module Freemium
     # assumes, of course, that this module is mixed in to the Subscription model
     def charge!
       self.class.transaction do
+        return if used_comp?
         # attempt to bill (use gateway)
         transaction = Freemium.gateway.charge(billing_key, subscription_plan.rate)
         Freemium.activity_log[self] << transaction if Freemium.log?

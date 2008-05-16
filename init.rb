@@ -4,7 +4,7 @@ require 'money'
 Dependencies.load_paths << File.expand_path(File.join(File.dirname(__FILE__), 'vendor', 'active_merchant', 'lib'))
 
 require 'freemium'
-require 'freemium/acts_subscriptable'
+require 'freemium/acts_subscribable'
 
 ActiveRecord::Base.class_eval do
   include Freemium::Acts::Subscriptable

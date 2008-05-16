@@ -19,7 +19,7 @@ module Freemium
 
     validate :valid_coupon_code
 
-    validates_presence_of :name, :coupon_code
+    validates_presence_of :name, :coupon_code, :span_num_days
     validates_uniqueness_of :name, :coupon_code
     validates_length_of :coupon_code, :minimum => 3
 

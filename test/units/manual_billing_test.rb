@@ -73,7 +73,7 @@ class ManualBillingTest < Test::Unit::TestCase
   def create_billable_subscription(options = {})
     Subscription.create({
       :subscription_plan => subscription_plans(:premium),
-      :subscriptable => User.new(:name => 'a'),
+      :subscribable => User.new(:name => 'a'),
       :paid_through => Date.today - 1,
       :billing_key => 'ninerfivebravo'
     }.merge(options))

@@ -1,5 +1,7 @@
 class <%= subscription_class_name %> < Freemium::Subscription
-  belongs_to :subscriptable, :class_name => '<%= user_class_name %>'
+  set_table_name "<%= subscription_plural_name %>"
+
+  belongs_to :subscribable, :class_name => '<%= user_class_name %>'
   has_many :user_coupon_referrals, :class_name => '<%= user_coupon_class_name %>'
 
 
@@ -8,10 +10,10 @@ class <%= subscription_class_name %> < Freemium::Subscription
   # GETTING STARTED
   #
   # 1) add this line to your <%= user_class_name %> model:
-  #       acts_as_subscriptable
+  #       acts_as_subscribable
   #
   # 2) create a new subscription for a user:
-  #       s = <%= subscription_class_name %>.create(:subscriptable => user, :subscription_plan => super_duper_plan)
+  #       s = <%= subscription_class_name %>.create(:subscribable => user, :subscription_plan => super_duper_plan)
   #
   # 3) pass in the credit care information when ready
   #       s.credit_card = <%= subscription_class_name %>.sample_cc_information

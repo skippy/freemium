@@ -1,5 +1,5 @@
 # == Attributes
-#   subscriptable:         the model in your system that has the subscription. probably a User.
+#   subscribable:         the model in your system that has the subscription. probably a User.
 #   subscription_plan:    which service plan this subscription is for. affects how payment is interpreted.
 #   paid_through:         when the subscription currently expires, assuming no further payment. for manual billing, this also determines when the next payment is due.
 #   billing_key:          the id for this user in the remote billing gateway. may not exist if user is on a free plan.
@@ -13,7 +13,7 @@ module Freemium
     before_save :process_cc
     after_destroy :cancel_in_remote_system
 
-    validates_presence_of :subscriptable
+    validates_presence_of :subscribable
     validates_presence_of :subscription_plan
     validates_presence_of :paid_through
 
@@ -32,7 +32,29 @@ module Freemium
     ##
     
     def has_comps_to_use?    
-      self.user_coupon_referrals.size > 0
+      self.user_coupon_referrals.count(:conditions => {:applied_on => nil}) > 0
+    end
+    
+    def used_comp?
+      comp = self.user_coupon_referrals.find(:first, :conditions => {:applied_on => nil})
+      return false unless comp
+      saved = false
+      transaction do
+        comp.update_attribute(:applied_on, Time.now)
+        self.paid_through = Time.now + comp.span_days.days
+        self.comped = true
+        # if they've paid again, then reset expiration
+        self.expire_on = nil
+        self.last_transaction_at = Time.now
+        saved = self.save        
+      end
+      if saved
+        Freemium.activity_log[self] << "comp'ed through #{self.paid_through}" if Freemium.log?
+        #do we want to setup an email to send out?
+        # sends an invoice for the specified amount.
+        # Freemium.mailer.deliver_invoice(subscribable, self, value)
+      end
+      saved
     end
 
     
@@ -78,14 +100,14 @@ module Freemium
     def expire_after_grace!
       self.expire_on = [Date.today, paid_through].max + Freemium.days_grace
       Freemium.activity_log[self] << "now set to expire on #{self.expire_on}" if Freemium.log?
-      Freemium.mailer.deliver_expiration_warning(subscriptable, self)
+      Freemium.mailer.deliver_expiration_warning(subscribable, self)
       save!
     end
 
     # sends an expiration email, then downgrades to a free plan
     def expire!
       Freemium.activity_log[self] << "expired!" if Freemium.log?
-      Freemium.mailer.deliver_expiration_notice(subscriptable, self)
+      Freemium.mailer.deliver_expiration_notice(subscribable, self)
       # downgrade to a free plan
       self.subscription_plan = Freemium.expired_plan
       # cancel whatever in the gateway
@@ -143,13 +165,14 @@ module Freemium
       # if they've paid again, then reset expiration
       self.expire_on = nil
       self.last_transaction_at = Time.now
+      self.comped = false
 
       Freemium.activity_log[self] << "now paid through #{self.paid_through}" if Freemium.log?
 
       # sends an invoice for the specified amount.
-      Freemium.mailer.deliver_invoice(subscriptable, self, value)
+      Freemium.mailer.deliver_invoice(subscribable, self, value)
     end
-
+    
     def set_paid_through
       self.paid_through ||= Date.today
     end

@@ -7,17 +7,18 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
     end
 
     create_table "<%= subscription_plural_name %>", :force => true do |t|
-      t.column :subscriptable_id, :integer, :null => false
+      t.column :subscribable_id, :integer, :null => false
       t.column "<%= subscription_singular_name %>_plan_id", :integer, :null => false
       t.column :paid_through, :date, :null => false
       t.column :expire_on, :date, :null => true
+      t.column :comped, :boolean, :default => false
       t.column :billing_key, :string, :null => true
       t.column :last_transaction_at, :datetime, :null => true
     end
 
     # for association queries
     # a user can have only ONE subscription plan at a time....
-    add_index "<%= subscription_plural_name %>", :subscriptable_id, :unique => true
+    add_index "<%= subscription_plural_name %>", :subscribable_id, :unique => true
 
     # for finding due, pastdue, and expiring subscriptions
     add_index "<%= subscription_plural_name %>", :paid_through
@@ -39,10 +40,11 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
     end
     
     create_table "<%= user_singular_name %>_<%= coupon_singular_name %>_referrals", :force => true do |t|
-      t.column :subscriptable_id, :integer
-      t.column "<%= subscription_singular_name %>_id", :integer, :null => false
-      t.column "<%= coupon_singular_name %>_id", :integer
-      t.column "referring_<%= user_singular_name %>_id", :integer
+      t.column :subscribable_id, :integer
+      t.column :subscription_id, :integer, :null => false
+      t.column :coupon_id, :integer
+      t.column :referring_user_id, :integer
+      t.column :free_days, :integer, :null => false
       t.column :applied_on, :date
     end
         
