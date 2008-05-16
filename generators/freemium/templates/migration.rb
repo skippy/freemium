@@ -52,7 +52,7 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
     #lets add the referral code column to the user model
     add_column "<%= user_plural_name %>", :referral_code, :string
     <%= user_class_name %>.reset_column_information
-    <%= user_class_name %>.send(:extend, Freemium::Acts::Subscriptable::SingletonMethods)
+    <%= user_class_name %>.send(:extend, Freemium::Acts::Subscribable::SingletonMethods)
     <%= user_class_name %>.setup_referral_codes!
     
   end

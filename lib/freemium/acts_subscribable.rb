@@ -1,7 +1,7 @@
 module Freemium
   
   module Acts
-    module Subscriptable
+    module Subscribable
 
       def self.included(base)
         base.extend(ClassMethods)  
@@ -31,8 +31,8 @@ module Freemium
           after_save :save_reffering_users_comp
 
 
-          include Freemium::Acts::Subscriptable::InstanceMethods
-          extend Freemium::Acts::Subscriptable::SingletonMethods
+          include Freemium::Acts::Subscribable::InstanceMethods
+          extend Freemium::Acts::Subscribable::SingletonMethods
         end
       end
 
@@ -40,7 +40,7 @@ module Freemium
         
         def setup_referral_codes!
           #do this in case the user has not added acts_as_subscribable yet....
-          send(:include, Freemium::Acts::Subscriptable::InstanceMethods)
+          send(:include, Freemium::Acts::Subscribable::InstanceMethods)
           find(:all, :select => 'id').each{|u| u.reset_referral_code!}
         end
         

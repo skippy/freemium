@@ -7,5 +7,5 @@ require 'freemium'
 require 'freemium/acts_subscribable'
 
 ActiveRecord::Base.class_eval do
-  include Freemium::Acts::Subscriptable
+  include Freemium::Acts::Subscribable
 end
