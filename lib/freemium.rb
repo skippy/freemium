@@ -5,10 +5,7 @@ module Freemium
     # Lets you configure which ActionMailer class contains appropriate
     # mailings for invoices, expiration warnings, and expiration notices.
     # You'll probably want to create your own, based on lib/subscription_mailer.rb.
-    attr_writer :mailer
-    def mailer
-      @mailer ||= SubscriptionMailer
-    end
+    attr_accessor :mailer
 
     # The gateway of choice. Default gateway is a stubbed testing gateway.
     attr_writer :gateway

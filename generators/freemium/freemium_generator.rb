@@ -100,15 +100,20 @@ class FreemiumGenerator < Rails::Generator::NamedBase
     recorded_session = record do |m|
       # m.migration_template "migration.rb", "db/migrate", :migration_file_name => "create_subscription_and_plan"
       m.migration_template 'migration.rb', 'db/migrate', :migration_file_name => "create_freemium_migrations"
-
-
+      
       m.template 'freemium_configs.rb', "config/initializers/freemium.rb"
       m.template 'subscription_model.rb', subscription_model_fullpath
 
       m.template 'subscription_plan_model.rb', subscription_plan_model_fullpath
       m.template 'coupon_model.rb', coupon_model_fullpath
       m.template 'user_coupon_referral_model.rb', user_coupon_referral_model_fullpath
-
+      
+      m.template 'subscription_mailer.rb', File.join('app/models', subscription_class_path, "#{subscription_file_name}_mailer.rb")
+      m.directory File.join('app/views', subscription_class_path, "#{subscription_file_name}_mailer")
+      %w( admin_report expiration_notice expiration_warning invoice ).each do |action|
+        m.file "subscription_mailer/#{action}.rhtml",
+                   File.join('app/views', subscription_class_path, "#{subscription_file_name}_mailer", "#{action}.rhtml")
+      end
     end
 
     puts

@@ -17,6 +17,12 @@ Freemium.gateway.password = "password"
 #  use :arb
 Freemium.billing_controller = :freemium
 
+#the mailer used to send out emails to user
+Freemium.mailer = <%= subscription_class_name %>Mailer
+
+# uncomment to be cc'ed on all freemium emails that go out to the user
+# Freemium.admin_report_recipients = %w{admin@site.com}
+
 #the grace period, in days, before Freemium triggers additional mails 
 #for the client.  Defaults to 3
 Freemium.days_grace = 3
