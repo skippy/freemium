@@ -38,6 +38,13 @@ module Freemium
     def expired_plan
       @expired_plan ||= SubscriptionPlan.find(:first, :conditions => "rate_cents = 0")
     end
+    
+    #force the referral_code to have a different format than a coupon code...
+    #allows the ability to have one point of entry for both coupons and referral codes
+    attr_writer :referral_code_prefix
+    def referral_code_prefix
+      @referral_code_prefix ||= 'ref'
+    end
 
     # If you want to receive admin reports, enter an email (or list of emails) here.
     # These will be bcc'd on all SubscriptionMailer emails, and will also receive the

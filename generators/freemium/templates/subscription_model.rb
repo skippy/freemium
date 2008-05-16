@@ -1,17 +1,23 @@
 class <%= subscription_class_name %> < Freemium::Subscription
-  belongs_to :subscribable, :class_name => '<%= user_class_name %>'
+  belongs_to :subscriptable, :class_name => '<%= user_class_name %>'
+  has_many :<%= user_coupon_plural_name %>, :class_name => '<%= user_coupon_class_name %>'
 
 
   #A list of helpful methods that are inherited are listed below.
   #
   # GETTING STARTED
   #
-  # 1) create a new subscription for a user:
-  #       s = <%= subscription_class_name %>.create(:subscribable => user, :subscription_plan => super_duper_plan)
-  # 2) pass in the credit care information when ready
+  # 1) add this line to your <%= user_class_name %> model:
+  #       acts_as_subscriptable
+  #
+  # 2) create a new subscription for a user:
+  #       s = <%= subscription_class_name %>.create(:subscriptable => user, :subscription_plan => super_duper_plan)
+  #
+  # 3) pass in the credit care information when ready
   #       s.credit_card = <%= subscription_class_name %>.sample_cc_information
   #    this method takes  Freemium::CreditCard object or a valid hash of objects
-  # 3) lets charge some users! (you can do this from a cron job)
+  #
+  # 4) lets charge some users! (you can do this from a cron job)
   #       <%= subscription_class_name %>.run_billing
   #
   # That is it!  There are various helper methods in case you need to know how much time is remaining, 
@@ -30,6 +36,11 @@ class <%= subscription_class_name %> < Freemium::Subscription
       :verification_value => '999' 
     }
   end
+  
+  def has_comps_to_use?    
+    self.user_coupons.size > 0
+  end
+  
 
   ##
   ## Receiving More Money

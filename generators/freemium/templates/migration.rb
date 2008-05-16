@@ -7,7 +7,7 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
     end
 
     create_table "<%= subscription_plural_name %>", :force => true do |t|
-      t.column :subscribable_id, :integer, :null => false
+      t.column :subscriptable_id, :integer, :null => false
       t.column "<%= subscription_singular_name %>_plan_id", :integer, :null => false
       t.column :paid_through, :date, :null => false
       t.column :expire_on, :date, :null => true
@@ -16,7 +16,8 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
     end
 
     # for association queries
-    add_index "<%= subscription_plural_name %>", :subscribable_id
+    # a user can have only ONE subscription plan at a time....
+    add_index "<%= subscription_plural_name %>", :subscriptable_id, :unique => true
 
     # for finding due, pastdue, and expiring subscriptions
     add_index "<%= subscription_plural_name %>", :paid_through
@@ -38,17 +39,19 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
     end
     
     create_table "<%= user_singular_name %>_<%= coupon_singular_name %>_referrals", :force => true do |t|
-      t.column "<%= subscription_singular_name %>_plan_id", :integer, :null => false
+      t.column :subscriptable_id, :integer
+      t.column "<%= subscription_singular_name %>_id", :integer, :null => false
       t.column "<%= coupon_singular_name %>_id", :integer
       t.column "referring_<%= user_singular_name %>_id", :integer
       t.column :applied_on, :date
     end
+        
      
     #lets add the referral code column to the user model
-    add_column "<%= user_plural_name %>", :referral_key, :string
+    add_column "<%= user_plural_name %>", :referral_code, :string
     <%= user_class_name %>.reset_column_information
-    <%= user_class_name %>.send(:extend, Freemium::Acts::Subscribable::SingletonMethods)
-    <%= user_class_name %>.setup_referral_keys!
+    <%= user_class_name %>.send(:extend, Freemium::Acts::Subscriptable::SingletonMethods)
+    <%= user_class_name %>.setup_referral_codes!
     
   end
 
@@ -59,7 +62,7 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
     drop_table "<%= coupon_plural_name %>"    
     drop_table "<%= user_singular_name %>_<%= coupon_singular_name %>_referrals"
     
-    remove_column "<%= user_plural_name %>", :referral_key
+    remove_column "<%= user_plural_name %>", :referral_code
     
   end
 end

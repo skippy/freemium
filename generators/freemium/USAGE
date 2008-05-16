@@ -1,1 +1,1 @@
-./script/generate freemium [SubscriptionModelName]
+./script/generate freemium UserModelName [SubscriptionModelName] [CouponReferralModelName]

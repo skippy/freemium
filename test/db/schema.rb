@@ -11,8 +11,8 @@ ActiveRecord::Schema.define(:version => 1) do
   end
 
   create_table :subscriptions, :force => true do |t|
-    t.column :subscribable_id, :integer, :null => false
-    t.column :subscribable_type, :string, :null => false
+    t.column :subscriptable_id, :integer, :null => false
+    t.column :subscriptable_type, :string, :null => false
     t.column :subscription_plan_id, :integer, :null => false
     t.column :paid_through, :date, :null => false
     t.column :expire_on, :date, :null => true

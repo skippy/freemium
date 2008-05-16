@@ -20,12 +20,19 @@ class FreemiumGenerator < Rails::Generator::NamedBase
   :coupon_file_name,
   :coupon_plural_name,
   :coupon_singular_name
+  
+  attr_reader :user_coupon_class_name,
+  :user_coupon_class_path,
+  :user_coupon_file_name,
+  :user_coupon_plural_name,
+  :user_coupon_singular_name
 
 
   def initialize(runtime_args, runtime_options = {})
     @user_class_name = runtime_args.shift # || 'user'
     @subscription_class_name = runtime_args.shift || 'subscription'
     @coupon_class_name = runtime_args.shift || 'coupon'
+    
 
     ### USER model information
     if @user_class_name
@@ -64,6 +71,20 @@ class FreemiumGenerator < Rails::Generator::NamedBase
     else
       @coupon_class_name = "#{@coupon_class_nesting}::#{@coupon_class_name_without_nesting}"
     end
+    
+    ### USER_COUPON information
+    @user_coupon_class_name = "#{user_class_name}#{coupon_class_name}Referral"
+    base_name, @user_coupon_class_path, @user_coupon_file_path, @user_coupon_class_nesting, @user_coupon_class_nesting_depth = extract_modules(@user_coupon_class_name)
+
+    @user_coupon_class_name_without_nesting, @user_coupon_file_name, @user_coupon_plural_name = inflect_names(base_name)
+    @user_coupon_singular_name = @user_coupon_file_name.singularize
+
+    if @user_coupon_class_nesting.empty?
+      @user_coupon_class_name = @user_coupon_class_name_without_nesting
+    else
+      @user_coupon_class_name = "#{@user_coupon_class_nesting}::#{@user_coupon_class_name_without_nesting}"
+    end
+    
 
     #this will cause it to fail if @user_class_name is blank... not sure why!
     runtime_args.insert(0, @user_class_name) if @user_class_name
@@ -74,7 +95,7 @@ class FreemiumGenerator < Rails::Generator::NamedBase
     subscription_model_fullpath =         File.join('app/models', subscription_class_path, "#{subscription_file_name}.rb")
     subscription_plan_model_fullpath =    File.join('app/models', subscription_class_path, "#{subscription_file_name}_plan.rb")
     coupon_model_fullpath = File.join('app/models', coupon_class_path, "#{coupon_file_name}.rb")
-    user_coupon_referral_model_fullpath = File.join('app/models', coupon_class_path, "#{user_file_name}_#{coupon_file_name}_referral.rb")
+    user_coupon_referral_model_fullpath = File.join('app/models', coupon_class_path, "#{user_coupon_file_name}.rb")
 
     recorded_session = record do |m|
       # m.migration_template "migration.rb", "db/migrate", :migration_file_name => "create_subscription_and_plan"
@@ -95,6 +116,7 @@ class FreemiumGenerator < Rails::Generator::NamedBase
     puts "Don't forget to:"
     puts
     puts "  review db/migrate/create_freemium_migrations"
+    puts "    WARNING: migrations and model manipulation will occur against the '#{user_class_name}' model"
     puts "  then run 'rake db:migrate'"
     puts "  You will find integration instructions within your model here:"
     puts "    #{subscription_model_fullpath}"

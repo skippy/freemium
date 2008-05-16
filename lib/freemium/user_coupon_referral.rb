@@ -1,29 +1,6 @@
 module Freemium
-  # == Schema Information
-  # Schema version: 93
-  #
-  # Table name: user_coupons
-  #
-  #  id                :integer(11)   not null, primary key
-  #  payment_id        :integer(11)   
-  #  coupon_id         :integer(11)   
-  #  referring_user_id :integer(11)   
-  #  applied_on        :date          
-  #  created_at        :datetime      
-  #  updated_at        :datetime      
-  #
-
   class UserCouponReferral < ActiveRecord::Base
-    acts_as_paranoid :with => :applied_on
-    belongs_to :coupon
-    # belongs_to :payment
-    belongs_to :referring_user, :class_name => 'User'
-
-    validates_presence_of :payment_id
-    validates_presence_of :coupon_id, :if => Proc.new{|model| model.referring_user_id.nil?}
-    validates_presence_of :referring_user_id, :if => Proc.new{|model| model.coupon_id.nil?}
-
-    validates_uniqueness_of :coupon_id, :referring_user_id, :scope => [:payment_id], :allow_blank => true
+    # acts_as_paranoid :with => :applied_on
 
     REFERALL_TIME_FRAME = 30
 
