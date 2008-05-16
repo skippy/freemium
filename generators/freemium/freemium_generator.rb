@@ -98,21 +98,20 @@ class FreemiumGenerator < Rails::Generator::NamedBase
     # user_coupon_referral_model_fullpath = File.join('app/models', coupon_class_path, "#{user_coupon_file_name}.rb")
 
     recorded_session = record do |m|
-      m.directory 'app/models/freemium'
       m.migration_template 'migration.rb', 'db/migrate', :migration_file_name => "create_freemium_migrations"
       
       m.template 'freemium_configs.rb', "config/initializers/freemium.rb"
 
-      m.template 'subscription_model.rb', 'app/models/freemium/subscription.rb'
-      m.template 'subscription_plan_model.rb', 'app/models/freemium/subscription_plan.rb'
-      m.template 'coupon_model.rb', 'app/models/freemium/coupon.rb'
-      m.template 'coupon_referral_model.rb', 'app/models/freemium/coupon_referral.rb'
-      m.template 'subscription_mailer.rb', 'app/models/freemium/subscription_mailer.rb'
+      # m.template 'subscription_model.rb', 'app/models/freemium/subscription.rb'
+      # m.template 'subscription_plan_model.rb', 'app/models/freemium/subscription_plan.rb'
+      # m.template 'coupon_model.rb', 'app/models/freemium/coupon.rb'
+      # m.template 'coupon_referral_model.rb', 'app/models/freemium/coupon_referral.rb'
+      m.template 'subscription_mailer.rb', 'app/models/freemium_mailer.rb'
       
-      m.directory 'app/views/subscription/subscription_mailer'
+      m.directory 'app/views/freemium_mailer'
       %w( admin_report expiration_notice expiration_warning invoice ).each do |action|
         m.file "subscription_mailer/#{action}.rhtml",
-                   File.join( 'app/views/subscription/subscription_mailer', "#{action}.rhtml")
+                   File.join( 'app/views/freemium_mailer', "#{action}.rhtml")
       end
     end
 
