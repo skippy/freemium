@@ -2,6 +2,7 @@ class <%= user_class_name + coupon_class_name%>Referral < Freemium::UserCouponRe
   
   belongs_to :<%= coupon_singular_name %>
   belongs_to :referring_user, :class_name => '<%= user_class_name %>'
+  belongs_to :subscription, :class_name => '<%= subscription_class_name %>'
   
   
   

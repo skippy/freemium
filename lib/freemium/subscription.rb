@@ -31,9 +31,10 @@ module Freemium
     ## Comp: coupons and referral codes
     ##
     
-    def has_comps_to_use?
-      raise NotImplementedError, "has_comps_to_use? needs to be implemented by the parent class"
+    def has_comps_to_use?    
+      self.user_coupon_referrals.size > 0
     end
+
     
 
     ##

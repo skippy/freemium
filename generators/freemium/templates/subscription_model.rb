@@ -1,6 +1,6 @@
 class <%= subscription_class_name %> < Freemium::Subscription
   belongs_to :subscriptable, :class_name => '<%= user_class_name %>'
-  has_many :<%= user_coupon_plural_name %>, :class_name => '<%= user_coupon_class_name %>'
+  has_many :user_coupon_referrals, :class_name => '<%= user_coupon_class_name %>'
 
 
   #A list of helpful methods that are inherited are listed below.
@@ -37,11 +37,6 @@ class <%= subscription_class_name %> < Freemium::Subscription
     }
   end
   
-  def has_comps_to_use?    
-    self.user_coupons.size > 0
-  end
-  
-
   ##
   ## Receiving More Money
   ##
