@@ -1,4 +1,4 @@
-class Freemium::SubscriptionMailer < ActionMailer::Base
+class FreemiumMailer < ActionMailer::Base
   def invoice(user, subscription, amount)
     setup_email(user)
     @subject              = "Your Invoice"
