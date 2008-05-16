@@ -1,6 +1,6 @@
-class <%= coupon_class_name %> < Freemium::Coupon
-  set_table_name "<%= coupon_plural_name %>"
+class Freemium::Coupon < Freemium::Coupon::Base
+  set_table_name "freemium_coupons"
   
-  has_many :<%= user_singular_name %>_<%= coupon_singular_name %>_referrals
+  has_many :freemium_coupon_referrals
   
 end

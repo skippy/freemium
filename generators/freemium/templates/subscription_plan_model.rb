@@ -1,4 +1,4 @@
-class <%= subscription_class_name %>Plan < Freemium::SubscriptionPlan
-  set_table_name "<%= subscription_singular_name %>_plans"
+class Freemium::SubscriptionPlan < Freemium::SubscriptionPlan::Base
+  set_table_name "freemium_subscription_plans"
   
 end
