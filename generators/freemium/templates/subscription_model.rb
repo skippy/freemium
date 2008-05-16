@@ -1,8 +1,8 @@
-class <%= subscription_class_name %> < Freemium::Subscription
-  set_table_name "<%= subscription_plural_name %>"
+class Freemium::Subscription < Freemium::Subscription::Base
+  set_table_name "freemium_subscriptions"
 
-  belongs_to :subscribable, :class_name => '<%= user_class_name %>'
-  has_many :user_coupon_referrals, :class_name => '<%= user_coupon_class_name %>'
+  # belongs_to :subscribable, :class_name => 'User'
+  # has_many :user_coupon_referrals, :class_name => 'Freemium::CouponReferral'
 
 
   #A list of helpful methods that are inherited are listed below.
@@ -13,14 +13,14 @@ class <%= subscription_class_name %> < Freemium::Subscription
   #       acts_as_subscribable
   #
   # 2) create a new subscription for a user:
-  #       s = <%= subscription_class_name %>.create(:subscribable => user, :subscription_plan => super_duper_plan)
+  #       s = Freemium::Subscription.create(:subscribable => user, :subscription_plan => super_duper_plan)
   #
   # 3) pass in the credit care information when ready
-  #       s.credit_card = <%= subscription_class_name %>.sample_cc_information
+  #       s.credit_card = Freemium::Subscription.sample_cc_information
   #    this method takes  Freemium::CreditCard object or a valid hash of objects
   #
   # 4) lets charge some users! (you can do this from a cron job)
-  #       <%= subscription_class_name %>.run_billing
+  #       Freemium::Subscription.run_billing
   #
   # That is it!  There are various helper methods in case you need to know how much time is remaining, 
   #  has their card expired, etc, but this is the meat of it!
