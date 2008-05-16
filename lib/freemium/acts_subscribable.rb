@@ -135,13 +135,13 @@ module Freemium
             end
             
             #we do
-            if Freemium.referral_allowed_after_signup #and do some sort of signup check..
+            if Freemium.referral_allowed_after_signup 
               #lets make sure they haven't used it already....
               if eval("self.#{acts_as_subscribable_options[:coupon_referrals_model_name]}.count(:conditions => {:referring_user_id => u.id, :subscribable_id => self.id})")
                 errors.add_to_base("You have already used this referral code.") 
                 return false;
               end
-            else
+            else #do some sort of signup check.... 
               
             end
               
