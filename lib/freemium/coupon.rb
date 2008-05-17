@@ -1,6 +1,8 @@
 module Freemium
   class Coupon < ActiveRecord::Base
     set_table_name 'freemium_coupons'
+    
+    has_many :coupon_referrals, :class_name => 'Freemium::CouponReferral'    
 
     validate :valid_coupon_code
 

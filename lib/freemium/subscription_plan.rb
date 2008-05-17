@@ -7,6 +7,7 @@
 module Freemium
   class SubscriptionPlan < ActiveRecord::Base
     set_table_name 'freemium_subscription_plans'
+    
     # yes, subscriptions.subscription_plan_id may not be null, but
     # this at least makes the delete not happen if there are any active.
     has_many :subscriptions, :dependent => :nullify

@@ -8,6 +8,10 @@
 module Freemium
   class Subscription < ActiveRecord::Base
     set_table_name 'freemium_subscriptions'
+    
+    belongs_to :subscribable, :polymorphic => true
+    has_many :coupon_referrals, :class_name => 'Freemium::CouponReferral'
+    
     belongs_to :subscription_plan
 
     before_validation :set_paid_through
