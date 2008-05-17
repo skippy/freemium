@@ -18,8 +18,8 @@ module Freemium
     # Freemium will simply try and keep up-to-date on transactions.
     def billing_controller=(val)
       case val
-        when :freemium: Freemium::Subscription.send(:include, Freemium::ManualBilling)
-        when :arb:      Freemium::Subscription.send(:include, Freemium::RecurringBilling)
+        when :manual: Freemium::Subscription.send(:include, Freemium::ManualBilling)
+        when :gateway:      Freemium::Subscription.send(:include, Freemium::RecurringBilling)
         else raise "unknown billing_controller: #{val}"
       end
     end

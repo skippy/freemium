@@ -23,7 +23,7 @@ module Freemium
       end
 
       ##
-      ## Only needed to support Freemium.billing_controller = :arb
+      ## Only needed to support Freemium.billing_controller = :gateway
       ##
 
       # only needed to support an ARB module. otherwise, the manual billing process will
@@ -40,7 +40,7 @@ module Freemium
       end
 
       ##
-      ## Only needed to support Freemium.billing_controller = :freemium
+      ## Only needed to support Freemium.billing_controller = :manual
       ##
 
       # charges money against the given billing key.
