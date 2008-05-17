@@ -2,8 +2,8 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
   def self.up
 
     create_table :freemium_subscriptions, :force => true do |t|
-      t.column :subscribable_id, :integer, :null => false
-      t.column :subscribable_type, :string, :null => false
+      t.column :subscriber_id, :integer, :null => false
+      t.column :subscriber_type, :string, :null => false
       t.column :subscription_plan_id, :integer, :null => false
       t.column :paid_through, :date, :null => false
       t.column :cc_digits_last_4, :integer, :limit => 4
@@ -22,7 +22,7 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
 
     # for association queries
     # a user can have only ONE subscription plan at a time....
-    add_index :freemium_subscriptions, :subscribable_id, :unique => true
+    add_index :freemium_subscriptions, :subscriber_id, :unique => true
 
     # for finding due, pastdue, and expiring subscriptions
     add_index :freemium_subscriptions, :paid_through
