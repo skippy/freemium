@@ -69,7 +69,7 @@ module Freemium
         self.comped = true
         # if they've paid again, then reset expiration
         self.expire_on = nil
-        self.payment_cents = nil
+        self.payment_cents = 0
         self.last_transaction_at = Time.now
         saved = self.save        
       end
