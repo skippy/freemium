@@ -23,6 +23,20 @@ module Freemium
     validates_presence_of :paid_through
 
     attr_reader :previously_paid_on
+    
+    
+    def self.sample_cc_information
+      #for braintree....
+      { 
+        :first_name => 'First Name', 
+        :last_name  => 'Last Name', 
+        :type       => 'visa',
+        :number     => '4111111111111111', 
+        :month      => '10', 
+        :year       => '2010', 
+        :verification_value => '999' 
+      }
+    end
 
     ##
     ## Receiving More Money
@@ -146,6 +160,7 @@ module Freemium
     def credit_card=(cc)
       @cc = Freemium::CreditCard.new(cc) if cc.is_a?(Hash)
     end
+    alias_method :cc=, :credit_card=
 
     protected
     
