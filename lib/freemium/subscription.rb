@@ -61,7 +61,7 @@ module Freemium
       saved = false
       transaction do
         comp.update_attribute(:applied_on, Time.now)
-        self.paid_through = Time.now + comp.span_days.days
+        self.paid_through = Time.now + comp.free_days.days
         self.comped = true
         # if they've paid again, then reset expiration
         self.expire_on = nil

@@ -20,15 +20,11 @@ module Freemium
           # })          
           # class_inheritable_reader :acts_as_subscriber_options
           
-          has_one   :subscription,  :class_name => 'Freemium::Subscription',  :dependent => :destroy, :as => :subscriber
-          has_many  :coupons,       :class_name => 'Freemium::Coupon',        :dependent => :destroy, :foreign_key => :subscriber_id
+          has_one   :subscription,     :class_name => 'Freemium::Subscription',   :dependent => :destroy, :as => :subscriber
           
-          validates_uniqueness_of :referral_code, :case_sensitive => false, :allow_blank => true
-          validates_format_of     :referral_code, :with => /\A#{Freemium.referral_code_prefix}/, :message => "must start with '#{Freemium.referral_code_prefix}'"
+          # validates_uniqueness_of :referral_code, :case_sensitive => false, :allow_blank => true
+          # validates_format_of     :referral_code, :with => /\A#{Freemium.referral_code_prefix}/, :message => "must start with '#{Freemium.referral_code_prefix}'"
           
-          before_save :prep_comps
-          after_save :save_reffering_users_comp
-
           include Freemium::Acts::Subscriber::InstanceMethods
           extend Freemium::Acts::Subscriber::SingletonMethods
         end
@@ -66,63 +62,16 @@ module Freemium
           self.save_without_validation
         end
         
-        def apply_coupon_referral_code?(code)
-          subscription_ = self.send("#{acts_as_subscriber_options[:subcription_model_name]}")
-          
-          return false if subscription.blank?
-          @comp_code = code
-          
-          # if code.start_with?(Freemium.referral_code_prefix)
-          #   #lets check referrals
-          #   u = User.find_by_referral_code(code)
-          #   return false if u.blank?
-          #   
-          #   #you cannot apply your own referral code on yourself!  nice try....
-          #   if u == self
-          #     errors.add_to_base("You cannot apply your own referral code for yourself.  Try again!") 
-          #     return false;
-          #   end
-          #   
-          #   #we do
-          #   if Freemium.referral_allowed_after_signup #and do some sort of signup check..
-          #     #lets make sure they haven't used it already....
-          #     if eval("self.#{acts_as_subscriber_options[:coupon_referrals_model_name]}.count(:conditions => {:subscriber_id => u.id})")
-          #       errors.add_to_base("You have already used this referral code.") 
-          #       return false;
-          #     end
-          #   else
-          #     
-          #   end
-          #     
-          #   
-          #   
-          #   #we need to apply free days to the user who is using the code AND the user it is coming from.
-          #   
-          #   #apply to the subscription o the current user
-          #   eval("self.#{acts_as_subscriber_options[:coupon_referrals_model_name]}.build(:referring_user_id => u.id, :#{acts_as_subscriber_options[:subcription_model_name]} => subscription, :free_days => Freemium.referral_days_for_applied_user)")
-          #   
-          #   #apply to the subscription of the referring user
-          #   unless u.subscription.blank?
-          #     #should never have a blank subscription, but just in 
-          #     @referring_users_comp = eval("u.#{acts_as_subscriber_options[:coupon_referrals_model_name]}.build(:referring_user_id => u.id, :#{acts_as_subscriber_options[:subcription_model_name]} => u.subscription, :free_days => Freemium.referral_days_for_referred_user)")
-          #   end
-          # else
-          #   c = Coupon.find_by_coupon_code(code)
-          #   return false if c.blank?
-          #   eval("self.#{acts_as_subscriber_options[:coupon_referrals_model_name]}.build(:coupon_id => c.id, :#{acts_as_subscriber_options[:subcription_model_name]} => subscription, :free_days => c.span_num_days)")
-          # end
-        end
         
-        protected
+        def applied_coupon_referral_code?(code)
+          return false if subscription.blank?
+          if code.start_with?(Freemium.referral_code_prefix)
 
-        def prep_comps
-          return true unless @comp_code
-puts "about prep_comps-1"
-          if @comp_code.start_with?(Freemium.referral_code_prefix)
             #lets check referrals
-            u = User.find_by_referral_code(@comp_code)
+            #TODO: need to make this more flexible.....
+            u = User.find_by_referral_code(code) rescue nil
             if u.blank?
-              errors.add_to_base("The referral key '#{@comp_code}' could not be found.")
+              errors.add_to_base("The referral key '#{code}' could not be found.")
               return false 
             end
             
@@ -142,38 +91,35 @@ puts "about prep_comps-1"
             else #do some sort of signup check.... 
               
             end
-puts "about prep_comps-2"
-              
-            
-            
             #we need to apply free days to the user who is using the code AND the user it is coming from.
             
             #apply to the subscription o the current user
             eval("self.#{acts_as_subscriber_options[:coupon_referrals_model_name]}.build(:referring_user_id => u.id, :#{acts_as_subscriber_options[:subcription_model_name]} => subscription, :free_days => Freemium.referral_days_for_applied_user)")
-puts "about prep_comps-3"
             
             #apply to the subscription of the referring user
             unless u.subscription.blank?
               #should never have a blank subscription, but just in 
               @referring_users_comp = eval("u.#{acts_as_subscriber_options[:coupon_referrals_model_name]}.build(:referring_user_id => u.id, :#{acts_as_subscriber_options[:subcription_model_name]} => u.subscription, :free_days => Freemium.referral_days_for_referred_user)")
-puts "about prep_comps-4"
             end
           else
-            c = Coupon.find_by_coupon_code(@comp_code)
+            c = Coupon.find_by_coupon_code(code)
             if c.blank?
-              errors.add_to_base("The coupon code '#{@comp_code}' could not be found.")
+              errors.add_to_base("The coupon code '#{code}' could not be found.")
               return false 
             end
             
             #make sure it hasn't been applied before
-            if eval("self.#{acts_as_subscriber_options[:coupon_referrals_model_name]}.count(:conditions => {:coupon_id => c.id, :subscriber_id => self.id})")
+            if subscription.coupon_referrals.count(:conditions => {:coupon_id => c.id}) > 0
               errors.add_to_base("You have already used this coupon code.") 
               return false;
             end
-            
-            eval("self.#{acts_as_subscriber_options[:coupon_referrals_model_name]}.build(:coupon_id => c.id, :#{acts_as_subscriber_options[:subcription_model_name]} => subscription, :free_days => c.span_num_days)")
+            subscription.coupon_referrals.create(:coupon_id => c.id, :free_days => c.span_num_days)
           end
         end
+        
+        
+        protected
+
         
         def save_reffering_users_comp
           return true unless @referring_users_comp
