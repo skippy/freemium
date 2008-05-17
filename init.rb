@@ -11,6 +11,7 @@ Dependencies.load_paths << File.expand_path(File.join(File.dirname(__FILE__), 'v
 
 require 'freemium'
 require 'freemium/acts_subscriber'
+require 'active_record_associations_fix'
 
 ActiveRecord::Base.class_eval do
   include Freemium::Acts::Subscriber

@@ -1,1 +1,4 @@
 ./script/generate freemium
+# optional arguments view with:
+# ./script/generate freemium -h
+

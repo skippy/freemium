@@ -23,7 +23,17 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
       t.column :comped, :boolean, :default => false
       t.column :billing_key, :string, :null => true
       t.column :last_transaction_at, :datetime, :null => true
+      <% if options[:acts_as_versioned_enabled] -%>
+      t.column :version,        :integer
+      <% end -%>
+      <% if options[:acts_as_paranoid_enabled] -%>
+      t.column :deleted_at,        :datetime
+      <% end -%>
     end
+    
+    <% if options[:acts_as_versioned_enabled] -%>
+      Freemium::Subscription.create_versioned_table
+    <% end -%>
 
     create_table :freemium_subscription_plans, :force => true do |t|
       t.column :name, :string, :null => false
@@ -67,6 +77,9 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
   def self.down
     drop_table :freemium_subscription_plans
     drop_table :freemium_subscriptions
+    <% if options[:acts_as_versioned_enabled] -%>
+      Freemium::Subscription.drop_versioned_table
+    <% end -%>
     
     drop_table :freemium_coupons
     drop_table :freemium_coupon_referrals

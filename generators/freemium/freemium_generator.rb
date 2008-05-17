@@ -1,6 +1,8 @@
 class FreemiumGenerator < Rails::Generator::NamedBase
 
-  default_options :add_referral_col => false
+  default_options :add_referral_col => false,
+                  :acts_as_versioned_enabled => false,
+                  :acts_as_paranoid_enabled => false
 
   attr_reader :user_class_name,
               :user_file_path,
@@ -29,6 +31,21 @@ class FreemiumGenerator < Rails::Generator::NamedBase
           @user_class_name = "#{@user_class_nesting}::#{@user_class_name_without_nesting}"
         end
       end
+      
+      begin
+        require 'acts_as_versioned'
+        options[:acts_as_versioned_enabled] = true
+      rescue Exception => e
+        options[:acts_as_versioned_enabled] = false
+      end
+
+      begin
+        require 'caboose/acts/paranoid'
+        options[:acts_as_paranoid_enabled] = true
+      rescue Exception => e
+        options[:acts_as_paranoid_enabled] = false
+      end
+      
       m.migration_template 'migration.rb', 'db/migrate', :migration_file_name => "create_freemium_migrations"
       
       m.template 'freemium_configs.rb', "config/initializers/freemium.rb"

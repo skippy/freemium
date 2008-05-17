@@ -8,6 +8,10 @@
 module Freemium
   class Subscription < ActiveRecord::Base
     set_table_name 'freemium_subscriptions'
+    acts_as_versioned(:table_name => 'freemium_subscription_versions') rescue nil #in case it doesn't exist
+    acts_as_paranoid rescue nil #in case it doesn't exist...
+        
+    
     belongs_to :subscription_plan
     belongs_to :subscriber, :polymorphic => true
     has_many :coupon_referrals, :class_name => 'Freemium::CouponReferral'
