@@ -11,11 +11,11 @@ Freemium.gateway.password = "password"
 #If you want Freemium to take care of the billing itself 
 #  (ie, handle everything within your app, with recurring payments via cron 
 #  or some other batch job)
-#  use :freemium
+#  use :manual
 #
 #if you want to use the gateways recuring payment system
-#  use :arb
-Freemium.billing_controller = :freemium
+#  use :gateway
+Freemium.billing_controller = :manual
 
 #the mailer used to send out emails to user
 Freemium.mailer = FreemiumMailer
