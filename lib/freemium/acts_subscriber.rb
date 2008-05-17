@@ -9,28 +9,25 @@ module Freemium
 
       module ClassMethods
         def acts_as_subscriber(options = {})
-          subscription_model = options[:subscriber] || :subscription
-          coupon_referrals_model = options[:coupon] || :coupon
-          coupon_referrals_model = "#{class_name.underscore}_#{coupon_referrals_model}_referrals"
+          # subscription_model = options[:subscriber] || :subscription
+          # coupon_referrals_model = options[:coupon] || :coupon
+          # coupon_referrals_model = "#{class_name.underscore}_#{coupon_referrals_model}_referrals"
           
+          # write_inheritable_attribute(:acts_as_subscriber_options, {
+          #   :subscriber_type => class_name.to_s,
+          #   :subcription_model_name => subscription_model,
+          #   :coupon_referrals_model_name => coupon_referrals_model
+          # })          
+          # class_inheritable_reader :acts_as_subscriber_options
           
-          write_inheritable_attribute(:acts_as_subscriber_options, {
-            :subscriber_type => class_name.to_s,
-            :subcription_model_name => subscription_model,
-            :coupon_referrals_model_name => coupon_referrals_model
-          })          
-          class_inheritable_reader :acts_as_subscriber_options
-          
-          
-          has_one   subscription_model,      :dependent => :destroy, :foreign_key => :subscriber_id
-          has_many  coupon_referrals_model, :dependent => :destroy, :foreign_key => :subscriber_id
+          has_one   :subscription,  :class_name => 'Freemium::Subscription',  :dependent => :destroy, :foreign_key => :subscriber_id, :as => :subscription
+          has_many  :coupons,       :class_name => 'Freemium::Coupon',        :dependent => :destroy, :foreign_key => :subscriber_id
           
           validates_uniqueness_of :referral_code, :case_sensitive => false, :allow_blank => true
           validates_format_of     :referral_code, :with => /\A#{Freemium.referral_code_prefix}/, :message => "must start with '#{Freemium.referral_code_prefix}'"
           
           before_save :prep_comps
           after_save :save_reffering_users_comp
-
 
           include Freemium::Acts::Subscriber::InstanceMethods
           extend Freemium::Acts::Subscriber::SingletonMethods
