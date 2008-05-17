@@ -9,13 +9,16 @@ module Freemium
   class Subscription < ActiveRecord::Base
     set_table_name 'freemium_subscriptions'
     belongs_to :subscription_plan
+    belongs_to :subscriber, :polymorphic => true
+    has_many :coupon_referrals, :class_name => 'Freemium::CouponReferral'
+    
 
     before_validation :set_paid_through
     before_save :process_cc
     after_destroy :cancel_in_remote_system
 
-    validates_presence_of :subscriber
-    validates_presence_of :subscription_plan
+    validates_presence_of :subscriber_id
+    validates_presence_of :subscription_plan_id
     validates_presence_of :paid_through
 
     attr_reader :previously_paid_on
@@ -23,6 +26,20 @@ module Freemium
     ##
     ## Receiving More Money
     ##
+    
+    def self.sample_cc_information
+      #for braintree....
+      { 
+        :first_name => 'First Name', 
+        :last_name  => 'Last Name', 
+        :type       => 'visa',
+        :number     => '4111111111111111', 
+        :month      => '10', 
+        :year       => '2010', 
+        :verification_value => '999' 
+      }
+    end
+    
 
     # receives payment and saves the record
     def receive_payment!(value)
@@ -35,11 +52,11 @@ module Freemium
     ##
     
     def has_comps_to_use?    
-      self.user_coupon_referrals.count(:conditions => {:applied_on => nil}) > 0
+      self.coupon_referrals.count(:conditions => {:applied_on => nil}) > 0
     end
     
     def used_comp?
-      comp = self.user_coupon_referrals.find(:first, :conditions => {:applied_on => nil})
+      comp = self.coupon_referrals.find(:first, :conditions => {:applied_on => nil})
       return false unless comp
       saved = false
       transaction do
