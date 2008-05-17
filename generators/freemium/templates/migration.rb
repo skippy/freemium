@@ -1,5 +1,16 @@
 class CreateFreemiumMigrations < ActiveRecord::Migration
   def self.up
+    <% unless user_class_name.blank? -%>
+     # lets add the referral code column to the user model
+     add_column :<%= user_plural_name %>, :referral_code, :string
+     <%= user_class_name %>.reset_column_information
+     #NOTE: not sure why, but I need to call the referral_code directly,
+     #      otherwise it is not picked up in setup_referral_codes!
+     u = <%= user_class_name %>.new
+     u.referral_code = 'here'
+     <%= user_class_name %>.send(:acts_as_subscriber)
+     <%= user_class_name %>.setup_referral_codes!
+   <% end -%>
 
     create_table :freemium_subscriptions, :force => true do |t|
       t.column :subscriber_id, :integer, :null => false
@@ -51,13 +62,6 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
       t.column :applied_on, :date
     end
         
-     
-    #lets add the referral code column to the user model
-    # add_column :users, :referral_code, :string
-    # User.reset_column_information
-    # User.send(:extend, Freemium::Acts::Subscribable::SingletonMethods)
-    # User.setup_referral_codes!
-    
   end
 
   def self.down
@@ -67,7 +71,8 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
     drop_table :freemium_coupons
     drop_table :freemium_coupon_referrals
     
-    # remove_column :users, :referral_code
-    
+    <% unless user_class_name.blank? -%>
+    remove_column :<%= user_plural_name %>, :referral_code
+    <% end -%>
   end
 end

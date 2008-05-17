@@ -12,10 +12,12 @@ module Freemium
           get_referral_code_method = options[:get_referral_code]
           set_referral_code_method = options[:get_referral_code]
           find_referral_code_method = options[:find_referral_code]
-          if self.column_names.include?('referral_code')
-            get_referral_code_method ||= 'referral_code'
-            set_referral_code_method ||= 'referral_code='
-            find_referral_code_method ||= "#{self.class_name}.find_by_referral_code"
+          referral_code_column_name = options[:referral_code_column]
+          referral_code_column_name ||= 'referral_code' if self.column_names.include?('referral_code') 
+          if referral_code_column_name
+            get_referral_code_method ||= referral_code_column_name
+            set_referral_code_method ||= "#{referral_code_column_name}="
+            find_referral_code_method ||= "#{self.class_name}.find_by_#{referral_code_column_name}"
           end
           #TODO: do some cleanup to make sure they are methods?
           referral_code_enabled = !(get_referral_code_method.blank? || set_referral_code_method.blank? || find_referral_code_method.blank?)
@@ -45,7 +47,6 @@ module Freemium
         
         def setup_referral_codes!
           #do this in case the user has not added acts_as_subscriber yet....
-          send(:include, Freemium::Acts::Subscriber::InstanceMethods)
           find(:all, :select => 'id').each{|u| u.reset_referral_code!}
         end
         
@@ -62,7 +63,8 @@ module Freemium
         def reset_referral_code!
           require 'rails_generator/secret_key_generator'
           init_token_size = 7
-          token = SingletonMethods.generate_referral_code(init_token_size + counter)
+          token = self.class.generate_referral_code(init_token_size)
+          # eval("self.#{acts_as_subscriber_options[:set_referral_code]} token")
           self.send(acts_as_subscriber_options[:set_referral_code], token)
           counter = 0
           finder_class = [self.class].detect { |klass| !klass.abstract_class? }

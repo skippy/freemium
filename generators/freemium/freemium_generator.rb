@@ -1,17 +1,34 @@
 class FreemiumGenerator < Rails::Generator::NamedBase
 
-  default_options :ignore_coupons => false,
-  :include_referrals => false
+  default_options :add_referral_col => false
 
-
+  attr_reader :user_class_name,
+              :user_file_path,
+              :user_class_nesting,
+              :user_class_nesting_depth,
+              :user_class_name,
+              :user_singular_name,
+              :user_plural_name,
+              :user_file_name  
+  
   def initialize(runtime_args, runtime_options = {})
-
     runtime_args.insert(0, 'migrations')
     super
   end
 
   def manifest
     recorded_session = record do |m|
+      if options[:add_referral_col]
+        base_name, @user_class_name, @user_file_path, @user_class_nesting, @user_class_nesting_depth = extract_modules(options[:add_referral_col])
+        @user_class_name_without_nesting, @user_file_name, @user_plural_name = inflect_names(base_name)
+        @user_singular_name = @user_file_name.singularize
+        
+        if @user_class_nesting.empty?
+          @user_class_name = @user_class_name_without_nesting
+        else
+          @user_class_name = "#{@user_class_nesting}::#{@user_class_name_without_nesting}"
+        end
+      end
       m.migration_template 'migration.rb', 'db/migrate', :migration_file_name => "create_freemium_migrations"
       
       m.template 'freemium_configs.rb', "config/initializers/freemium.rb"
@@ -27,9 +44,11 @@ class FreemiumGenerator < Rails::Generator::NamedBase
     puts
     puts ("-" * 70)
     puts "Don't forget to:"
-    puts
     puts "  review db/migrate/create_freemium_migrations"
+    puts "  WARNING: You asked to have the referral_code column added to the '#{user_class_name}' model."
+    puts "           It is recommended that you double check the migration."
     puts "  then run 'rake db:migrate'"
+    puts
     puts ("-" * 70)
 
     #need to end with this...
@@ -42,14 +61,14 @@ class FreemiumGenerator < Rails::Generator::NamedBase
   #   "Usage: #{$0} freemium UserModelName [SubscriptionModelName] [CouponReferralModelName]"
   # end
 
-  # def add_options!(opt)
-  #   opt.separator ''
-  #   opt.separator 'Options:'
-  #   opt.on("--include-coupons", 
-  #          "allow the subscription service to work with coupons") { |v| options[:include_coupons] = v }
-  #   opt.on("--include-referrals", 
-  #          "allow the subscription service to work with user referrals") { |v| options[:include_referrals] = true }
-  # end
+  def add_options!(opt)
+    opt.separator ''
+    opt.separator 'Options:'    
+    opt.on("--add-referral-col=ToUserModel", String,
+           "allow the subscription service to work with coupons") { |v| options[:add_referral_col] = v }
+    # opt.on("--include-referrals", 
+    #        "allow the subscription service to work with user referrals") { |v| options[:include_referrals] = true }
+  end
 
 
 end
