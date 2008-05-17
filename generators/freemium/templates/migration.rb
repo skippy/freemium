@@ -16,6 +16,7 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
       t.column :subscriber_id, :integer, :null => false
       t.column :subscriber_type, :string, :null => false
       t.column :subscription_plan_id, :integer, :null => false
+      t.column :payment_cents, :integer
       t.column :paid_through, :date, :null => false
       t.column :cc_digits_last_4, :integer, :limit => 4
       t.column :cc_type,          :string, :limit => 25
