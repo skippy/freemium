@@ -4,7 +4,7 @@ class SubscriptionTest < Test::Unit::TestCase
   fixtures :users, :subscriptions, :subscription_plans
 
   def test_associations
-    assert_equal users(:bob), subscriptions(:bobs_subscription).subscribable
+    assert_equal users(:bob), subscriptions(:bobs_subscription).subscriber
     assert_equal subscription_plans(:basic), subscriptions(:bobs_subscription).subscription_plan
   end
 
@@ -26,7 +26,7 @@ class SubscriptionTest < Test::Unit::TestCase
   end
 
   def test_missing_fields
-    [:subscription_plan, :subscribable].each do |field|
+    [:subscription_plan, :subscriber].each do |field|
       subscription = create_subscription(field => nil)
       assert subscription.new_record?
       assert subscription.errors.on(field)
@@ -185,7 +185,7 @@ class SubscriptionTest < Test::Unit::TestCase
   def create_subscription(options = {})
     Subscription.create({
       :subscription_plan => subscription_plans(:basic),
-      :subscribable => users(:sue)
+      :subscriber => users(:sue)
     }.merge(options))
   end
 end

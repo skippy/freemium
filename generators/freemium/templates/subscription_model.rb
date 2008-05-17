@@ -1,7 +1,7 @@
 class Freemium::Subscription < Freemium::Subscription::Base
   set_table_name "freemium_subscriptions"
 
-  # belongs_to :subscribable, :class_name => 'User'
+  # belongs_to :subscriber, :class_name => 'User'
   # has_many :user_coupon_referrals, :class_name => 'Freemium::CouponReferral'
 
 
@@ -10,10 +10,10 @@ class Freemium::Subscription < Freemium::Subscription::Base
   # GETTING STARTED
   #
   # 1) add this line to your <%= user_class_name %> model:
-  #       acts_as_subscribable
+  #       acts_as_subscriber
   #
   # 2) create a new subscription for a user:
-  #       s = Freemium::Subscription.create(:subscribable => user, :subscription_plan => super_duper_plan)
+  #       s = Freemium::Subscription.create(:subscriber => user, :subscription_plan => super_duper_plan)
   #
   # 3) pass in the credit care information when ready
   #       s.credit_card = Freemium::Subscription.sample_cc_information

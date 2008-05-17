@@ -1,14 +1,14 @@
 module Freemium
   
   module Acts
-    module Billable
+    module Subscriber
 
       def self.included(base)
         base.extend(ClassMethods)  
       end
 
       module ClassMethods
-        def acts_as_billable(options = {})
+        def acts_as_subscriber(options = {})
           subscription_model = options[:subscribable] || :subscription
           coupon_referrals_model = options[:coupon] || :coupon
           coupon_referrals_model = "#{class_name.underscore}_#{coupon_referrals_model}_referrals"

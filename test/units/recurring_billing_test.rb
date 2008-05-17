@@ -24,10 +24,10 @@ class RecurringBillingTest < Test::Unit::TestCase
 
   def test_subscriptions_to_expire
     # making a one-off fixture set, basically
-    create_billable_subscription # this subscription qualifies
-    create_billable_subscription(:subscription_plan => subscription_plans(:free)) # this subscription would qualify, except it's for the free plan
-    create_billable_subscription(:paid_through => Date.today) # this subscription would qualify, except it's already paid
-    create_billable_subscription(:expire_on => Date.today + 1) # this subscription would qualify, except it's already been set to expire
+    create_subscriber_subscription # this subscription qualifies
+    create_subscriber_subscription(:subscription_plan => subscription_plans(:free)) # this subscription would qualify, except it's for the free plan
+    create_subscriber_subscription(:paid_through => Date.today) # this subscription would qualify, except it's already paid
+    create_subscriber_subscription(:expire_on => Date.today + 1) # this subscription would qualify, except it's already been set to expire
 
     expirable = Subscription.send(:find_expirable)
     assert expirable.all? {|subscription| subscription.subscription_plan.rate_cents > 0}, "free subscriptions don't expire"
@@ -67,10 +67,10 @@ class RecurringBillingTest < Test::Unit::TestCase
 
   protected
 
-  def create_billable_subscription(options = {})
+  def create_subscriber_subscription(options = {})
     Subscription.create({
       :subscription_plan => subscription_plans(:premium),
-      :subscribable => User.new(:name => 'a'),
+      :subscriber => User.new(:name => 'a'),
       :paid_through => Date.today - 1
     }.merge(options))
   end

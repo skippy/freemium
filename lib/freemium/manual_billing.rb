@@ -21,8 +21,8 @@ module Freemium
       # the process you should run periodically
       def run_billing
         Freemium.with_activity_logging do
-          # charge all billable subscriptions
-          find_billable.each(&:charge!)
+          # charge all subscriber subscriptions
+          find_subscriber.each(&:charge!)
           # actually expire any subscriptions whose time has come
           expire
 
@@ -40,7 +40,7 @@ module Freemium
       # subscriptions that expire the day *after* the given date. note that this
       # also finds past-due subscriptions, as long as they haven't been set to
       # expire.
-      def find_billable(date = Date.today)
+      def find_subscriber(date = Date.today)
         find(
           :all,
           :include => :subscription_plan,
