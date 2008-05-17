@@ -1,5 +1,5 @@
 # == Attributes
-#   subscribable:         the model in your system that has the subscription. probably a User.
+#   subscriber:         the model in your system that has the subscription. probably a User.
 #   subscription_plan:    which service plan this subscription is for. affects how payment is interpreted.
 #   paid_through:         when the subscription currently expires, assuming no further payment. for manual billing, this also determines when the next payment is due.
 #   billing_key:          the id for this user in the remote billing gateway. may not exist if user is on a free plan.
@@ -8,35 +8,17 @@
 module Freemium
   class Subscription < ActiveRecord::Base
     set_table_name 'freemium_subscriptions'
-    
-    belongs_to :subscribable, :polymorphic => true
-    has_many :coupon_referrals, :class_name => 'Freemium::CouponReferral'
-    
     belongs_to :subscription_plan
 
     before_validation :set_paid_through
     before_save :process_cc
     after_destroy :cancel_in_remote_system
 
-    validates_presence_of :subscribable
+    validates_presence_of :subscriber
     validates_presence_of :subscription_plan
     validates_presence_of :paid_through
 
     attr_reader :previously_paid_on
-    
-    
-    def self.sample_cc_information
-      #for braintree....
-      { 
-        :first_name => 'First Name', 
-        :last_name  => 'Last Name', 
-        :type       => 'visa',
-        :number     => '4111111111111111', 
-        :month      => '10', 
-        :year       => '2010', 
-        :verification_value => '999' 
-      }
-    end
 
     ##
     ## Receiving More Money
@@ -73,7 +55,7 @@ module Freemium
         Freemium.activity_log[self] << "comp'ed through #{self.paid_through}" if Freemium.log?
         #do we want to setup an email to send out?
         # sends an invoice for the specified amount.
-        # Freemium.mailer.deliver_invoice(subscribable, self, value)
+        # Freemium.mailer.deliver_invoice(subscriber, self, value)
       end
       saved
     end
@@ -124,14 +106,14 @@ module Freemium
     def expire_after_grace!
       self.expire_on = [Date.today, paid_through].max + Freemium.days_grace
       Freemium.activity_log[self] << "now set to expire on #{self.expire_on}" if Freemium.log?
-      Freemium.mailer.deliver_expiration_warning(subscribable, self)
+      Freemium.mailer.deliver_expiration_warning(subscriber, self)
       save!
     end
 
     # sends an expiration email, then downgrades to a free plan
     def expire!
       Freemium.activity_log[self] << "expired!" if Freemium.log?
-      Freemium.mailer.deliver_expiration_notice(subscribable, self)
+      Freemium.mailer.deliver_expiration_notice(subscriber, self)
       # downgrade to a free plan
       self.subscription_plan = Freemium.expired_plan
       # cancel whatever in the gateway
@@ -160,7 +142,6 @@ module Freemium
     def credit_card=(cc)
       @cc = Freemium::CreditCard.new(cc) if cc.is_a?(Hash)
     end
-    alias_method :cc=, :credit_card=
 
     protected
     
@@ -197,7 +178,7 @@ module Freemium
       Freemium.activity_log[self] << "now paid through #{self.paid_through}" if Freemium.log?
 
       # sends an invoice for the specified amount.
-      Freemium.mailer.deliver_invoice(subscribable, self, value)
+      Freemium.mailer.deliver_invoice(subscriber, self, value)
     end
     
     def set_paid_through
