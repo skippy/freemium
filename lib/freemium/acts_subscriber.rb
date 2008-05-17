@@ -38,6 +38,10 @@ module Freemium
           find(:all, :select => 'id').each{|u| u.reset_referral_code!}
         end
         
+        def generate_referral_code
+          
+        end
+        
       end
 
       module InstanceMethods
@@ -84,7 +88,8 @@ module Freemium
             #we do
             if Freemium.referral_allowed_after_signup 
               #lets make sure they haven't used it already....
-              if eval("self.#{acts_as_subscriber_options[:coupon_referrals_model_name]}.count(:conditions => {:referring_user_id => u.id, :subscriber_id => self.id})")
+              subscription.coupon_referrals.count(:conditions => {:referring_user_id => u.id}) > 0
+              if subscription.coupon_referrals.count(:conditions => {:referring_user_id => u.id}) > 0
                 errors.add_to_base("You have already used this referral code.") 
                 return false;
               end
@@ -94,12 +99,12 @@ module Freemium
             #we need to apply free days to the user who is using the code AND the user it is coming from.
             
             #apply to the subscription o the current user
-            eval("self.#{acts_as_subscriber_options[:coupon_referrals_model_name]}.build(:referring_user_id => u.id, :#{acts_as_subscriber_options[:subcription_model_name]} => subscription, :free_days => Freemium.referral_days_for_applied_user)")
+            subscription.coupon_referrals.create(:referring_user_id => u.id, :free_days => Freemium.referral_days_for_applied_user)
             
             #apply to the subscription of the referring user
             unless u.subscription.blank?
               #should never have a blank subscription, but just in 
-              @referring_users_comp = eval("u.#{acts_as_subscriber_options[:coupon_referrals_model_name]}.build(:referring_user_id => u.id, :#{acts_as_subscriber_options[:subcription_model_name]} => u.subscription, :free_days => Freemium.referral_days_for_referred_user)")
+              u.subscription.coupon_referrals.create(:referring_user_id => u.id, :free_days => Freemium.referral_days_for_referred_user)
             end
           else
             c = Coupon.find_by_coupon_code(code)
@@ -116,17 +121,6 @@ module Freemium
             subscription.coupon_referrals.create(:coupon_id => c.id, :free_days => c.span_num_days)
           end
         end
-        
-        
-        protected
-
-        
-        def save_reffering_users_comp
-          return true unless @referring_users_comp
-          @referring_users_comp.valid?
-          @referring_users_comp.save!
-        end
-        
       end
 
 
