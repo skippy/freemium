@@ -18,8 +18,8 @@ module Freemium
     # Freemium will simply try and keep up-to-date on transactions.
     def billing_recurrence_mode=(val)
       case val
-        when :manual: Freemium::Subscription.send(:include, Freemium::ManualBilling)
-        when :gateway:      Freemium::Subscription.send(:include, Freemium::RecurringBilling)
+        when :manual:   Freemium::Subscription.send(:include, Freemium::ManualBilling)
+        when :gateway:  Freemium::Subscription.send(:include, Freemium::RecurringBilling)
         else raise "unknown billing_recurrence_mode: #{val}"
       end
     end
@@ -56,18 +56,9 @@ module Freemium
 
     attr_writer :referral_days_for_referred_user
     def referral_days_for_referred_user
-      @referral_days_for_referred_user ||= 15
+      @referral_days_for_referred_user ||= 30
     end
     
-    # do you want to allow users to use referral codes once they are signed up?
-    # defaults to no
-    attr_writer :referral_allowed_after_signup
-    def referral_allowed_after_signup
-      @referral_allowed_after_signup ||= false
-    end
-    
-    
-
     # If you want to receive admin reports, enter an email (or list of emails) here.
     # These will be bcc'd on all SubscriptionMailer emails, and will also receive the
     # admin activity report.

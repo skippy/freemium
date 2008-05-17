@@ -21,16 +21,17 @@ module Freemium
           end
           #TODO: do some cleanup to make sure they are methods?
           referral_code_enabled = !(get_referral_code_method.blank? || set_referral_code_method.blank? || find_referral_code_method.blank?)
-          
+
           write_inheritable_attribute(:acts_as_subscriber_options, {
             :referral_code_enabled => referral_code_enabled,
             :get_referral_code => get_referral_code_method,
             :set_referral_code => set_referral_code_method,
-            :find_referral_code => find_referral_code_method
+            :find_referral_code => find_referral_code_method,
+            :disable_referral_when_method => options[:disable_referral_when]
           })          
           class_inheritable_reader :acts_as_subscriber_options
           
-          has_one   :subscription,     :class_name => 'Freemium::Subscription',   :dependent => :destroy, :as => :subscriber
+          has_one :subscription, :class_name => 'Freemium::Subscription', :dependent => :destroy, :as => :subscriber
           
           if referral_code_enabled
             validates_uniqueness_of get_referral_code_method, :case_sensitive => false, :allow_blank => true
@@ -84,10 +85,10 @@ module Freemium
         def applied_coupon_referral_code?(code)
           return false if subscription.blank?
           if code.start_with?(Freemium.referral_code_prefix)
-
             #lets check referrals
-            #TODO: need to make this more flexible.....
-            u = User.find_by_referral_code(code) rescue nil
+
+            #is there a better way to check this?
+            u = eval("#{acts_as_subscriber_options[:find_referral_code]} '#{code}'") rescue nil
             if u.blank?
               errors.add_to_base("The referral key '#{code}' could not be found.")
               return false 
@@ -98,18 +99,19 @@ module Freemium
               errors.add_to_base("You cannot apply your own referral code for yourself.  Try again!") 
               return false;
             end
-            
-            #we do
-            if Freemium.referral_allowed_after_signup 
-              #lets make sure they haven't used it already....
-              subscription.coupon_referrals.count(:conditions => {:referring_user_id => u.id}) > 0
-              if subscription.coupon_referrals.count(:conditions => {:referring_user_id => u.id}) > 0
-                errors.add_to_base("You have already used this referral code.") 
-                return false;
-              end
-            else #do some sort of signup check.... 
-              
+
+            if acts_as_subscriber_options[:disable_referral_when_method] && self.send(acts_as_subscriber_options[:disable_referral_when_method])
+              errors.add_to_base("You can no longer add a referral to your account.");
+              return false;
             end
+
+            #lets make sure they haven't used it already....
+            subscription.coupon_referrals.count(:conditions => {:referring_user_id => u.id}) > 0
+            if subscription.coupon_referrals.count(:conditions => {:referring_user_id => u.id}) > 0
+              errors.add_to_base("You have already used this referral code.") 
+              return false;
+            end
+
             #we need to apply free days to the user who is using the code AND the user it is coming from.
             
             #apply to the subscription o the current user
