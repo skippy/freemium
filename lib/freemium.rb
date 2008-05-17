@@ -16,11 +16,11 @@ module Freemium
     # You need to specify whether Freemium or your gateway's ARB module will control
     # the billing process. If your gateway's ARB controls the billing process, then
     # Freemium will simply try and keep up-to-date on transactions.
-    def billing_controller=(val)
+    def billing_recurrence_mode=(val)
       case val
         when :manual: Freemium::Subscription.send(:include, Freemium::ManualBilling)
         when :gateway:      Freemium::Subscription.send(:include, Freemium::RecurringBilling)
-        else raise "unknown billing_controller: #{val}"
+        else raise "unknown billing_recurrence_mode: #{val}"
       end
     end
 

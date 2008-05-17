@@ -50,7 +50,7 @@ So there's some possible slack in the timeline. Suppose a subscription is paid t
 3) Create config/initializers/freemium.rb and configure at least the following:
 
   gateway            pick one, then see rdoc for your gateway's options to see what needs to be configured (api key, etc.)
-  billing_controller set to :full or :gateway, depending on whether you're using your gateway's ARB module
+  billing_recurrence_mode set to :full or :gateway, depending on whether you're using your gateway's ARB module
   days_grace         in days, zero days grace is ok
   mailer             for customized invoices, etc.
 

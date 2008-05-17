@@ -20,7 +20,7 @@ module Freemium
           # })          
           # class_inheritable_reader :acts_as_subscriber_options
           
-          has_one   :subscription,  :class_name => 'Freemium::Subscription',  :dependent => :destroy, :foreign_key => :subscriber_id, :as => :subscription
+          has_one   :subscription,  :class_name => 'Freemium::Subscription',  :dependent => :destroy, :as => :subscriber
           has_many  :coupons,       :class_name => 'Freemium::Coupon',        :dependent => :destroy, :foreign_key => :subscriber_id
           
           validates_uniqueness_of :referral_code, :case_sensitive => false, :allow_blank => true

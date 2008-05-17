@@ -15,7 +15,7 @@ Freemium.gateway.password = "password"
 #
 #if you want to use the gateways recuring payment system
 #  use :gateway
-Freemium.billing_controller = :manual
+Freemium.billing_recurrence_mode = :manual
 
 #the mailer used to send out emails to user
 Freemium.mailer = FreemiumMailer
