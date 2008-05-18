@@ -35,7 +35,7 @@ module Freemium
           
           if referral_code_enabled
             validates_uniqueness_of get_referral_code_method, :case_sensitive => false, :allow_blank => true
-            validates_format_of     get_referral_code_method, :with => /\A#{Freemium.referral_code_prefix}/, :message => "must start with '#{Freemium.referral_code_prefix}'"
+            validates_format_of     get_referral_code_method, :with => /\A#{Freemium.referral_code_prefix}/, :message => "must start with '#{Freemium.referral_code_prefix}'", :allow_blank => true
           end
           
           include Freemium::Acts::Subscriber::InstanceMethods

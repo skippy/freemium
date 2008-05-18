@@ -8,7 +8,7 @@ class FreemiumMailer < ActionMailer::Base
 
   def expiration_warning(user, subscription)
     setup_email(user)
-    @subject              = "Your subscription is set to expire"
+    @subject              = "Your subscription is about to expire"
     @body[:subscription]  = subscription
   end
 
