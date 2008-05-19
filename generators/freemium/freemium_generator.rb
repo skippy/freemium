@@ -62,8 +62,18 @@ class FreemiumGenerator < Rails::Generator::NamedBase
     puts ("-" * 70)
     puts "Don't forget to:"
     puts "  review db/migrate/create_freemium_migrations"
-    puts "  WARNING: You asked to have the referral_code column added to the '#{user_class_name}' model."
-    puts "           It is recommended that you double check the migration."
+    puts "  then add 'acts_as_subscriber' to the model that will the subscriber (User, for example)"
+    puts
+    if user_class_name.blank?
+      puts "  To add referral codes, specify:"
+      puts "     acts_as_subscriber :get_referral_code => 'my_referral_token', :set_referral_code => 'my_referral_token=', :find_referral_code => 'User.find_by_my_referral_token' "
+      puts "  Then run something like:"
+      puts "     User.setup_referral_codes!"
+    else
+      puts "  WARNING: You asked to have the referral_code column added to the '#{user_class_name}' model."      
+    end
+    puts
+    puts "  It is recommended that you double check the migration."
     puts "  then run 'rake db:migrate'"
     puts
     puts ("-" * 70)
@@ -74,9 +84,9 @@ class FreemiumGenerator < Rails::Generator::NamedBase
 
   protected
   # Override with your own usage banner.
-  # def banner
-  #   "Usage: #{$0} freemium UserModelName [SubscriptionModelName] [CouponReferralModelName]"
-  # end
+  def banner
+    "Usage: #{$0} freemium"
+  end
 
   def add_options!(opt)
     opt.separator ''

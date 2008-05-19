@@ -10,7 +10,7 @@ module Freemium
       module ClassMethods
         def acts_as_subscriber(options = {})
           get_referral_code_method = options[:get_referral_code]
-          set_referral_code_method = options[:get_referral_code]
+          set_referral_code_method = options[:set_referral_code]
           find_referral_code_method = options[:find_referral_code]
           referral_code_column_name = options[:referral_code_column]
           referral_code_column_name ||= 'referral_code' if self.column_names.include?('referral_code') 
@@ -68,11 +68,15 @@ module Freemium
           # eval("self.#{acts_as_subscriber_options[:set_referral_code]} token")
           self.send(acts_as_subscriber_options[:set_referral_code], token)
           counter = 0
-          finder_class = [self.class].detect { |klass| !klass.abstract_class? }
-          conditions = ["referral_code = ?", self.send(acts_as_subscriber_options[:get_referral_code])]
+          # finder_class = [self.class].detect { |klass| !klass.abstract_class? }
+          # conditions = ["referral_code = ?", self.send(acts_as_subscriber_options[:get_referral_code])]
       
           #hmmm...what do we do if we can't find a unique token?
-          while counter < 10 && (finder_class.find(:first, :select => 1, :conditions => conditions))
+          
+          # u = eval("#{acts_as_subscriber_options[:find_referral_code]} '#{code}'") rescue nil
+          # eval("#{acts_as_subscriber_options[:find_referral_code]} '#{code}'")
+          while counter < 10 && (eval("#{acts_as_subscriber_options[:find_referral_code]} '#{self.send(acts_as_subscriber_options[:get_referral_code])}'").blank?)
+          # while counter < 10 && (finder_class.find(:first, :select => 1, :conditions => conditions))
             token = SingletonMethods.generate_referral_code(init_token_size + counter)
             self.send(acts_as_subscriber_options[:set_referral_code], token)
             counter += 1
@@ -88,6 +92,7 @@ module Freemium
             #lets check referrals
 
             #is there a better way to check this?
+            
             u = eval("#{acts_as_subscriber_options[:find_referral_code]} '#{code}'") rescue nil
             if u.blank?
               errors.add_to_base("The referral key '#{code}' could not be found.")
