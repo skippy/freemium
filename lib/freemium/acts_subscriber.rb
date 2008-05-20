@@ -39,7 +39,8 @@ module Freemium
           has_one :subscription, :class_name => 'Freemium::Subscription', :dependent => :destroy, :as => :subscriber
           
           if referral_code_enabled
-            before_validation :setup_referral_code
+            # this is REALLY expensive to setup...do we want to enforce it or make it optional?
+            before_create :setup_referral_code
             
             validates_each :referral_code, :allow_blank => true do |record, attr, value|
               u = eval("#{acts_as_subscriber_options[:find_referral_code]} '#{record.send(acts_as_subscriber_options[:get_referral_code])}'")
