@@ -37,6 +37,8 @@ module Freemium
           class_inheritable_reader :acts_as_subscriber_options
           
           has_one :subscription, :class_name => 'Freemium::Subscription', :dependent => :destroy, :as => :subscriber
+          attr_accessor :coupon
+          after_save :handle_coupon!
           
           if referral_code_enabled
             # this is REALLY expensive to setup...do we want to enforce it or make it optional?
@@ -105,16 +107,24 @@ module Freemium
       
       module InstanceMethods
         
-        def setup_coupon_referral_code(code)
+        def setup_subscription(plan)
+          build_subscription( :subscription_plan_id => (plan.is_a?(Freemium::SubscriptionPlan) ? plan.id : plan))
+        end
+        
+        #TODO: it is vague and not defined that this will fail if subscription is not defined!
+        #this is not really a good idea... the reason to do it is if you 
+        def setup_coupon_referral_code(code, error_field=:base)
           prep_coupon_referral_code(code)
+          return true
         rescue ReferralNotAppliedException => e
-          errors.add_to_base(e.message)
+          errors.add(error_field, e.message)
           return false
         rescue CouponNotAppliedException => e
-          errors.add_to_base(e.message)
+          errors.add(error_field, e.message)
           return false
         end
         
+        #TODO: it is vague and not defined that this will fail if subscription is not defined!
         def apply_coupon_referral_code!(code)
           transaction do
             prep_coupon_referral_code(code)
@@ -195,6 +205,13 @@ module Freemium
         def save_referring_user!
           return unless @referring_user
           @referring_user.save!
+        end
+        
+        def handle_coupon!
+          return true if @coupon.blank?
+          success = setup_coupon_referral_code(@coupon, :coupon)
+          #do we REALLY want to put this this deep within the process?x`
+          raise ActiveRecord::Rollback unless success
         end
         
       end
