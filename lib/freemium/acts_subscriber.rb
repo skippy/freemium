@@ -203,14 +203,14 @@ module Freemium
         end
         
         def save_referring_user!
-          return unless @referring_user
+          return if @referring_user.blank?
           @referring_user.save!
         end
         
         def handle_coupon!
           return true if @coupon.blank?
           success = setup_coupon_referral_code(@coupon, :coupon)
-          #do we REALLY want to put this this deep within the process?x`
+          #do we REALLY want to put this this deep within the process?
           raise ActiveRecord::Rollback unless success
         end
         
