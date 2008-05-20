@@ -18,8 +18,8 @@ module Freemium
     # Freemium will simply try and keep up-to-date on transactions.
     def billing_recurrence_mode=(val)
       case val
-        when :manual:   Freemium::Subscription.send(:include, Freemium::ManualBilling)
-        when :gateway:  Freemium::Subscription.send(:include, Freemium::RecurringBilling)
+        when :manual:   FreemiumSubscription.send(:include, Freemium::ManualBilling)
+        when :gateway:  FreemiumSubscription.send(:include, Freemium::RecurringBilling)
         else raise "unknown billing_recurrence_mode: #{val}"
       end
     end

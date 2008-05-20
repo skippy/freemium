@@ -20,7 +20,7 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
       t.column :paid_through, :date, :null => false
       t.column :cc_digits_last_4, :integer, :limit => 4
       t.column :cc_type,          :string, :limit => 25
-      t.column :expire_on, :date, :null => true
+      t.column :expires_on, :date, :null => true
       t.column :comped, :boolean, :default => false
       t.column :billing_key, :string, :null => true
       t.column :last_transaction_at, :datetime, :null => true
@@ -33,7 +33,7 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
     end
     
     <% if options[:acts_as_versioned_enabled] -%>
-      Freemium::Subscription.create_versioned_table
+      FreemiumSubscription.create_versioned_table
     <% end -%>
 
     create_table :freemium_subscription_plans, :force => true do |t|
@@ -48,7 +48,7 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
 
     # for finding due, pastdue, and expiring subscriptions
     add_index :freemium_subscriptions, :paid_through
-    add_index :freemium_subscriptions, :expire_on
+    add_index :freemium_subscriptions, :expires_on
 
     # for applying transactions from automated recurring billing
     add_index :freemium_subscriptions, :billing_key
@@ -61,7 +61,7 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
       t.column :span_num_days, :integer, :null => false
       t.column :usage_limit, :integer, :default => 0
       t.column :usage_counter, :integer, :default => 0
-      t.column :expire_on, :date
+      t.column :expires_on, :date
       t.column :created_at, :datetime
     end
     
@@ -79,7 +79,7 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
     drop_table :freemium_subscription_plans
     drop_table :freemium_subscriptions
     <% if options[:acts_as_versioned_enabled] -%>
-      Freemium::Subscription.drop_versioned_table
+      FreemiumSubscription.drop_versioned_table
     <% end -%>
     
     drop_table :freemium_coupons

@@ -36,7 +36,7 @@ module Freemium
           })          
           class_inheritable_reader :acts_as_subscriber_options
           
-          has_one :subscription, :class_name => 'Freemium::Subscription', :dependent => :destroy, :as => :subscriber
+          has_one :subscription, :class_name => 'FreemiumSubscription', :dependent => :destroy, :as => :subscriber
           attr_accessor :coupon
           after_save :handle_coupon!
           
@@ -108,7 +108,7 @@ module Freemium
       module InstanceMethods
         
         def setup_subscription(plan)
-          build_subscription( :subscription_plan_id => (plan.is_a?(Freemium::SubscriptionPlan) ? plan.id : plan))
+          build_subscription( :subscription_plan_id => (plan.is_a?(FreemiumSubscriptionPlan) ? plan.id : plan))
         end
         
         #TODO: it is vague and not defined that this will fail if subscription is not defined!
