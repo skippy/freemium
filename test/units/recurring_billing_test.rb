@@ -27,12 +27,12 @@ class RecurringBillingTest < Test::Unit::TestCase
     create_subscriber_subscription # this subscription qualifies
     create_subscriber_subscription(:subscription_plan => subscription_plans(:free)) # this subscription would qualify, except it's for the free plan
     create_subscriber_subscription(:paid_through => Date.today) # this subscription would qualify, except it's already paid
-    create_subscriber_subscription(:expire_on => Date.today + 1) # this subscription would qualify, except it's already been set to expire
+    create_subscriber_subscription(:expires_on => Date.today + 1) # this subscription would qualify, except it's already been set to expire
 
     expirable = Subscription.send(:find_expirable)
     assert expirable.all? {|subscription| subscription.subscription_plan.rate_cents > 0}, "free subscriptions don't expire"
     assert expirable.all? {|subscription| subscription.paid_through < Date.today}, "paid subscriptions don't expire"
-    assert expirable.all? {|subscription| !subscription.expire_on or subscription.expire_on < subscription.paid_through}, "subscriptions already expiring aren't included"
+    assert expirable.all? {|subscription| !subscription.expires_on or subscription.expires_on < subscription.paid_through}, "subscriptions already expiring aren't included"
   end
 
   def test_processing_new_transactions
@@ -53,10 +53,10 @@ class RecurringBillingTest < Test::Unit::TestCase
     Subscription.stubs(:new_transactions).returns([t])
 
     # the actual test
-    assert_nil subscription.expire_on
+    assert_nil subscription.expires_on
     Subscription.send :process_new_transactions
     assert_equal paid_through, subscription.reload.paid_through, "not extended"
-    assert_not_nil subscription.expire_on
+    assert_not_nil subscription.expires_on
   end
 
   def test_all_new_transactions

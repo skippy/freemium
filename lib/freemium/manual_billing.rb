@@ -10,6 +10,10 @@ module Freemium
     def charge!
       self.class.transaction do
         return if used_comp?
+        if billing_key.blank?
+          expire_after_grace!
+          return 
+        end
         # attempt to bill (use gateway)
         transaction = Freemium.gateway.charge(billing_key, subscription_plan.rate)
         Freemium.activity_log[self] << transaction if Freemium.log?
@@ -44,7 +48,7 @@ module Freemium
         find(
           :all,
           :include => :subscription_plan,
-          :conditions => ['freemium_subscription_plans.rate_cents > 0 AND paid_through <= ? AND (expire_on IS NULL or expire_on < paid_through)', date.to_date]
+          :conditions => ['freemium_subscription_plans.rate_cents > 0 AND paid_through <= ? AND (expires_on IS NULL or expires_on < paid_through)', date.to_date]
         )
       end
     end

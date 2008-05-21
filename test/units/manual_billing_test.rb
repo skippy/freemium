@@ -15,12 +15,12 @@ class ManualBillingTest < Test::Unit::TestCase
     create_subscriber_subscription(:paid_through => Date.today) # this subscription should be subscriber
     create_subscriber_subscription(:subscription_plan => subscription_plans(:free)) # shouldn't be subscriber because it's free
     create_subscriber_subscription(:paid_through => Date.today + 1) # shouldn't be subscriber because it's paid far enough out
-    create_subscriber_subscription(:expire_on => Date.today + 1) # shouldn't be subscriber because it's already expiring
+    create_subscriber_subscription(:expires_on => Date.today + 1) # shouldn't be subscriber because it's already expiring
 
     expirable = Subscription.send(:find_subscriber)
     assert expirable.all? {|subscription| subscription.subscription_plan.rate_cents > 0}, "free subscriptions aren't subscriber"
     assert expirable.all? {|subscription| subscription.paid_through <= Date.today}, "subscriptions paid through tomorrow aren't subscriber yet"
-    assert expirable.all? {|subscription| !subscription.expire_on or subscription.expire_on < subscription.paid_through}, "subscriptions already expiring aren't subscriber"
+    assert expirable.all? {|subscription| !subscription.expires_on or subscription.expires_on < subscription.paid_through}, "subscriptions already expiring aren't subscriber"
   end
 
   def test_charging_a_subscription
@@ -49,10 +49,10 @@ class ManualBillingTest < Test::Unit::TestCase
       )
     )
 
-    assert_nil subscription.expire_on
+    assert_nil subscription.expires_on
     assert_nothing_raised do subscription.charge! end
     assert_equal paid_through, subscription.reload.paid_through, "not extended"
-    assert_not_nil subscription.expire_on
+    assert_not_nil subscription.expires_on
   end
 
   def test_run_billing_calls_charge_on_subscriber

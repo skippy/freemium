@@ -81,7 +81,7 @@ class SubscriptionTest < Test::Unit::TestCase
 
   def test_class_expire
     Freemium.expired_plan = subscription_plans(:free)
-    subscription = create_subscription(:paid_through => Date.today - 4, :expire_on => Date.today)
+    subscription = create_subscription(:paid_through => Date.today - 4, :expires_on => Date.today)
     ActionMailer::Base.deliveries = []
     assert_equal subscription_plans(:basic), subscription.subscription_plan
     Subscription.expire
@@ -95,16 +95,16 @@ class SubscriptionTest < Test::Unit::TestCase
     assert_equal 1, ActionMailer::Base.deliveries.size
   end
   def test_expire_after_grace
-    assert_nil subscriptions(:bobs_subscription).expire_on
+    assert_nil subscriptions(:bobs_subscription).expires_on
     subscriptions(:bobs_subscription).paid_through = Date.today - 1
     subscriptions(:bobs_subscription).expire_after_grace!
-    assert_equal Date.today + Freemium.days_grace, subscriptions(:bobs_subscription).reload.expire_on
+    assert_equal Date.today + Freemium.days_grace, subscriptions(:bobs_subscription).reload.expires_on
   end
 
   def test_expire_after_grace_with_remaining_paid_period
     subscriptions(:bobs_subscription).paid_through = Date.today + 1
     subscriptions(:bobs_subscription).expire_after_grace!
-    assert_equal Date.today + 1 + Freemium.days_grace, subscriptions(:bobs_subscription).reload.expire_on
+    assert_equal Date.today + 1 + Freemium.days_grace, subscriptions(:bobs_subscription).reload.expires_on
   end
 
   def test_grace_and_expiration
@@ -123,13 +123,13 @@ class SubscriptionTest < Test::Unit::TestCase
     assert !subscription.expired?
 
     # expires tomorrow
-    subscription = Subscription.new(:paid_through => Date.today - 5, :expire_on => Date.today + 1)
+    subscription = Subscription.new(:paid_through => Date.today - 5, :expires_on => Date.today + 1)
     assert_equal 0, subscription.remaining_days_of_grace
     assert subscription.in_grace?
     assert !subscription.expired?
 
     # expires today
-    subscription = Subscription.new(:paid_through => Date.today - 5, :expire_on => Date.today)
+    subscription = Subscription.new(:paid_through => Date.today - 5, :expires_on => Date.today)
     assert_equal -1, subscription.remaining_days_of_grace
     assert !subscription.in_grace?
     assert subscription.expired?

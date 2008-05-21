@@ -6,20 +6,17 @@
 #   last_transaction_at:  when the last gateway transaction was for this account. this is used by your gateway to find "new" transactions.
 #
 class FreemiumSubscription < ActiveRecord::Base
-  acts_as_versioned rescue nil #(:table_name => 'freemium_subscription_versions') rescue nil #in case it doesn't exist
-  acts_as_paranoid rescue nil #in case it doesn't exist...
-
-
-  belongs_to :subscription_plan, :class_name => 'FreemiumSubscriptionPlan'
-  belongs_to :subscriber, :polymorphic => true
-  has_many :coupon_referrals, :class_name => 'FreemiumCouponReferral', :foreign_key => 'subscription_id'
-  
   #allows us to make sure we don't save versions if things haven't changed!
   #we call save on this object a lot to save instantiated but unsaved children
   #but we don't want to version that!
-  self.track_changed_attributes = true
+  acts_as_versioned :if_changed => [:subscription_plan_id, :state_dsc, :payment_cents, :paid_through, :billing_key, :comped, :in_trial ] rescue nil    
+  acts_as_paranoid rescue nil #in case it doesn't exist...
 
 
+  belongs_to :subscription_plan, :class_name => 'FreemiumSubscriptionPlan', :foreign_key => 'subscription_plan_id'
+  belongs_to :subscriber, :polymorphic => true
+  has_many :coupon_referrals, :class_name => 'FreemiumCouponReferral', :foreign_key => 'subscription_id'
+  
   before_validation :set_paid_through
   before_save :process_cc
   before_create :setup_free_trial_period
@@ -74,8 +71,9 @@ class FreemiumSubscription < ActiveRecord::Base
       comp.update_attribute(:applied_on, Time.now)
       self.paid_through = Time.now + comp.free_days.days
       self.comped = true
+      self.in_trial = false
       # if they've paid again, then reset expiration
-      self.expire_on = nil
+      self.expires_on = nil
       self.payment_cents = 0
       self.last_transaction_at = Time.now
       self.state_dsc = comp.is_coupon? ? 'used coupon' : 'used referral'
@@ -116,7 +114,7 @@ class FreemiumSubscription < ActiveRecord::Base
 
   # if under grace through today, returns zero
   def remaining_days_of_grace
-    self.expire_on.blank? ? 0 : self.expire_on - Date.today - 1
+    self.expires_on.blank? ? 0 : self.expires_on - Date.today - 1
   end
 
   def in_grace?
@@ -129,13 +127,13 @@ class FreemiumSubscription < ActiveRecord::Base
 
   # expires all subscriptions that have been pastdue for too long (accounting for grace)
   def self.expire
-    find(:all, :conditions => ['expire_on >= paid_through AND expire_on <= ?', Date.today]).each(&:expire!)
+    find(:all, :conditions => ['expires_on >= paid_through AND expires_on <= ?', Date.today]).each(&:expire!)
   end
 
   # sets the expiration for the subscription based on today and the configured grace period.
   def expire_after_grace!
-    self.expire_on = [Date.today, paid_through].max + Freemium.days_grace
-    Freemium.activity_log[self] << "now set to expire on #{self.expire_on}" if Freemium.log?
+    self.expires_on = [Date.today, paid_through].max + Freemium.days_grace
+    Freemium.activity_log[self] << "now set to expire on #{self.expires_on}" if Freemium.log?
     Freemium.mailer.deliver_expiration_warning(subscriber, self)
     save!
   end
@@ -157,7 +155,7 @@ class FreemiumSubscription < ActiveRecord::Base
   end
 
   def expired?
-    expire_on and expire_on <= Date.today
+    expires_on and expires_on <= Date.today
   end
 
   # Simple assignment of a credit card. Note that this may not be
@@ -177,7 +175,9 @@ class FreemiumSubscription < ActiveRecord::Base
   
   def setup_free_trial_period
     self.paid_through = Date.today + Freemium.days_free_trial.days
+    self.expires_on = nil
     self.state_dsc = (Freemium.days_free_trial > 0) ? 'trial' : 'initial'
+    self.in_trial = (Freemium.days_free_trial > 0)
   end
     
   def self.free_trial_ends_on
@@ -218,9 +218,10 @@ class FreemiumSubscription < ActiveRecord::Base
     end
 
     # if they've paid again, then reset expiration
-    self.expire_on = nil
+    self.expires_on = nil
     self.last_transaction_at = Time.now
     self.comped = false
+    self.in_trial = false
     self.payment_cents = value.cents
 
     Freemium.activity_log[self] << "now paid through #{self.paid_through}" if Freemium.log?

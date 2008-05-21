@@ -23,13 +23,14 @@ class CreateFreemiumMigrations < ActiveRecord::Migration
       t.column :cc_type,          :string, :limit => 25
       t.column :expires_on, :date, :null => true
       t.column :comped, :boolean, :default => false
+      t.column :in_trial, :boolean, :default => false
       t.column :billing_key, :string, :null => true
       t.column :last_transaction_at, :datetime, :null => true
       <% if options[:acts_as_versioned_enabled] -%>
-      t.column :version,        :integer
+    t.column :version,        :integer
       <% end -%>
       <% if options[:acts_as_paranoid_enabled] -%>
-      t.column :deleted_at,        :datetime
+    t.column :deleted_at,        :datetime
       <% end -%>
     end
     
