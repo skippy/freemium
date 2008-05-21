@@ -13,6 +13,12 @@ module Freemium
       end
 
       module ClassMethods
+        
+        # adds the following to the subscriber model
+        # * <tt>has_one subscription</tt> 
+        # * methods <tt>coupon</tt> and <tt>coupon=</tt>
+        # 
+        #
         def acts_as_subscriber(options = {})
           get_referral_code_method = options[:get_referral_code]
           set_referral_code_method = options[:set_referral_code]
@@ -38,6 +44,7 @@ module Freemium
           
           has_one :subscription, :class_name => 'FreemiumSubscription', :dependent => :destroy, :as => :subscriber
           attr_accessor :coupon
+          before_validation :check_coupon
           after_save :handle_coupon!
           
           if referral_code_enabled
@@ -114,7 +121,26 @@ module Freemium
         #TODO: it is vague and not defined that this will fail if subscription is not defined!
         #this is not really a good idea... the reason to do it is if you 
         def setup_coupon_referral_code(code, error_field=:base)
-          prep_coupon_referral_code(code)
+          if validate_coupon_referral_code(code, error_base)
+            build_coupon_referral_code(code)
+            return true
+          end
+          return false
+        end
+        
+        #TODO: it is vague and not defined that this will fail if subscription is not defined!
+        def apply_coupon_referral_code!(code)
+          transaction do
+            build_coupon_referral_code(code)
+            self.save!
+          end
+        end
+        
+        
+        private 
+        
+        def validate_coupon_referral_code(code, error_field=:base)
+          validate_coupon_referral_code!(code)
           return true
         rescue ReferralNotAppliedException => e
           errors.add(error_field, e.message)
@@ -124,55 +150,51 @@ module Freemium
           return false
         end
         
-        #TODO: it is vague and not defined that this will fail if subscription is not defined!
-        def apply_coupon_referral_code!(code)
-          transaction do
-            prep_coupon_referral_code(code)
-            self.save!
-            save_referring_user!
-          end
-        end
-        
-        
-        private 
-        
-        def prep_coupon_referral_code(code)
+        #validates the validity of the coupon or referral code.
+        #all other validity checks, like coupon usage limit, should go here
+        def validate_coupon_referral_code!(code)
           return false if subscription.blank?
           if code.start_with?(Freemium.referral_code_prefix)
             #lets check referrals
 
-            #is there a better way to check this?
-            
             u = eval("#{acts_as_subscriber_options[:find_referral_code]} '#{code}'") rescue nil
             if u.blank?
               raise ReferralNotAppliedException, "The referral key '#{code}' could not be found."
-              # errors.add_to_base("The referral key '#{code}' could not be found.")
-              # return false 
             end
             
             #you cannot apply your own referral code on yourself!  nice try....
             if u == self
               raise ReferralNotAppliedException, "You cannot apply your own referral code for yourself.  Try again!"
-              # errors.add_to_base("You cannot apply your own referral code for yourself.  Try again!") 
-              # return false;
             end
 
             if acts_as_subscriber_options[:disable_referral_when_method] && self.send(acts_as_subscriber_options[:disable_referral_when_method])
               raise ReferralNotAppliedException, "You can no longer add a referral to your account."
-              # errors.add_to_base("You can no longer add a referral to your account.");
-              # return false;
             end
 
             #lets make sure they haven't used it already....
             subscription.coupon_referrals.count(:conditions => {:referring_user_id => u.id}) > 0
             if subscription.coupon_referrals.count(:conditions => {:referring_user_id => u.id}) > 0
               raise ReferralNotAppliedException, "You have already used this referral code."
-              # errors.add_to_base("You have already used this referral code.") 
-              # return false;
             end
 
-            #we need to apply free days to the user who is using the code AND the user it is coming from.
+          else
+            c = FreemiumCoupon.find_by_coupon_code(code)
+            if c.blank?
+              raise CouponNotAppliedException, "The coupon code '#{code}' could not be found."
+            end
             
+            #make sure it hasn't been applied before
+            if subscription.coupon_referrals.count(:conditions => {:coupon_id => c.id}) > 0
+              raise CouponNotAppliedException, "You have already used this coupon code."
+            end
+            #other checks like usage limit, expired, etc
+          end
+        end
+        
+        #build the appropriate relationship.  Assums that validations has already been run.
+        def build_coupon_referral_code(code)
+          return false if subscription.blank?
+          if code.start_with?(Freemium.referral_code_prefix)            
             #apply to the subscription o the current user
             subscription.coupon_referrals.build(:referring_user_id => u.id, :free_days => Freemium.referral_days_for_applied_user)
             
@@ -183,35 +205,49 @@ module Freemium
               u.subscription.coupon_referrals.build(:referring_user_id => u.id, :free_days => Freemium.referral_days_for_referred_user)
             end
           else
-            c = Coupon.find_by_coupon_code(code)
-            if c.blank?
-              raise CouponNotAppliedException, "The coupon code '#{code}' could not be found."
-              # errors.add_to_base("The coupon code '#{code}' could not be found.")
-              # return false 
+            c = FreemiumCoupon.find_by_coupon_code(code)
+            if c
+              #assume validation that this exists and is valid
+              subscription.coupon_referrals.build(:coupon_id => c.id, :free_days => c.span_num_days)
             end
-            
-            #make sure it hasn't been applied before
-            if subscription.coupon_referrals.count(:conditions => {:coupon_id => c.id}) > 0
-              raise CouponNotAppliedException, "You have already used this coupon code."
-              # errors.add_to_base("You have already used this coupon code.") 
-              # return false;
-            end
-            #other checks like usage limit, expired, etc
-            
-            subscription.coupon_referrals.build(:coupon_id => c.id, :free_days => c.span_num_days)
           end          
         end
         
+        #need to make sure that if a referrer code was passed in, that the person who's code it is also
+        #gets a row in coupon_referrals.... so making sure it is persisted.
         def save_referring_user!
           return if @referring_user.blank?
-          @referring_user.save!
+          @referring_user.subscription.save!
+          @referring_user = nil #so we don't call it multiple times...
         end
         
+        #NOTE: 'check_coupon' and 'handle_coupon!' are a bit odd in how they are structured.
+        # this is to work around a few rails bugs
+        # 1) when calling save, it starts at the children and works its way to the parent,
+        #    instead of the other way around.  This means that if a child depends upon a parent_id
+        #    being set, it won't be, and things will fail
+        # 2) the other idea was to have handle_coupon! be called on after_save and raise a Rollback exception
+        #    if it is invalid...but this wasn't being bubbled up correctly.  If the save is wrapped with a 
+        #    transaction, this exception will be swallowed by the one wrapping the save, but two transactions
+        #    are used with only the first (the outer wrapping one) actually having a db transaction.  the inner
+        #    one will swallow the exception, where it doesn't really matter, and not bubble it up to the next one,
+        #    which is where the db transaction occured.
+        def check_coupon
+          return true if @coupon.blank?
+          validate_coupon_referral_code(@coupon, :coupon)
+        end
+                
         def handle_coupon!
           return true if @coupon.blank?
-          success = setup_coupon_referral_code(@coupon, :coupon)
-          #do we REALLY want to put this this deep within the process?
-          raise ActiveRecord::Rollback unless success
+          build_coupon_referral_code(@coupon)
+          subscription.save
+          save_referring_user!
+          # success = setup_coupon_referral_code(@coupon, :coupon)
+          # #do we REALLY want to put this this deep within the process?
+          # #TODO: IF there is a transaction on top of the after_save transaction, this will not bubble up.
+          # #bug in rails 2.0.2 where the first transaction swallows this, even if it was 
+          # # not an open transaction.... 
+          # raise ActiveRecord::Rollback unless success
         end
         
       end

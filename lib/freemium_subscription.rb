@@ -6,24 +6,30 @@
 #   last_transaction_at:  when the last gateway transaction was for this account. this is used by your gateway to find "new" transactions.
 #
 class FreemiumSubscription < ActiveRecord::Base
-  acts_as_versioned #(:table_name => 'freemium_subscription_versions') rescue nil #in case it doesn't exist
+  acts_as_versioned rescue nil #(:table_name => 'freemium_subscription_versions') rescue nil #in case it doesn't exist
   acts_as_paranoid rescue nil #in case it doesn't exist...
 
 
   belongs_to :subscription_plan, :class_name => 'FreemiumSubscriptionPlan'
   belongs_to :subscriber, :polymorphic => true
-  has_many :coupon_referrals, :class_name => 'FreemiumCouponReferral'
+  has_many :coupon_referrals, :class_name => 'FreemiumCouponReferral', :foreign_key => 'subscription_id'
+  
+  #allows us to make sure we don't save versions if things haven't changed!
+  #we call save on this object a lot to save instantiated but unsaved children
+  #but we don't want to version that!
+  self.track_changed_attributes = true
 
 
   before_validation :set_paid_through
   before_save :process_cc
+  before_create :setup_free_trial_period
   after_destroy :cancel_in_remote_system
 
   validates_presence_of :subscriber_id
   validates_presence_of :subscription_plan_id
   validates_presence_of :paid_through
 
-  attr_reader :previously_paid_on
+  attr_reader :previously_paid_on, :credit_card
 
   ##
   ## Receiving More Money
@@ -42,6 +48,9 @@ class FreemiumSubscription < ActiveRecord::Base
     }
   end
 
+  def self.setup_cc(cc={})
+    Freemium::CreditCard.new(cc)
+  end
 
   # receives payment and saves the record
   def receive_payment!(value)
@@ -69,6 +78,7 @@ class FreemiumSubscription < ActiveRecord::Base
       self.expire_on = nil
       self.payment_cents = 0
       self.last_transaction_at = Time.now
+      self.state_dsc = comp.is_coupon? ? 'used coupon' : 'used referral'
       saved = self.save        
     end
     if saved
@@ -79,7 +89,7 @@ class FreemiumSubscription < ActiveRecord::Base
     end
     saved
   end
-
+  
   def paid_through=(time)
     @previously_paid_on = self.paid_through
     self[:paid_through] = time
@@ -136,6 +146,8 @@ class FreemiumSubscription < ActiveRecord::Base
     Freemium.mailer.deliver_expiration_notice(subscriber, self)
     # downgrade to a free plan
     self.subscription_plan = Freemium.expired_plan
+    self.state_dsc = 'expired'
+    
     # cancel whatever in the gateway
     cancel_in_remote_system
     # throw away this billing key (they'll have to start all over again)
@@ -160,18 +172,33 @@ class FreemiumSubscription < ActiveRecord::Base
   # NOTE: Support for updating an address could easily be added
   # with an "address" property on the credit card.
   def credit_card=(cc)
-    @cc = Freemium::CreditCard.new(cc) if cc.is_a?(Hash)
+    @credit_card = cc.is_a?(Freemium::CreditCard) ? cc : Freemium::CreditCard.new(cc)
   end
-
+  
+  def setup_free_trial_period
+    self.paid_through = Date.today + Freemium.days_free_trial.days
+    self.state_dsc = (Freemium.days_free_trial > 0) ? 'trial' : 'initial'
+  end
+    
+  def self.free_trial_ends_on
+    Date.today + Freemium.days_free_trial.days
+  end
+  
+  
   protected
 
   def process_cc
-    return true unless @cc
-    response = (billing_key) ? Freemium.gateway.update(billing_key, @cc) : Freemium.gateway.store(@cc)
-    raise Freemium::CreditCardStorageError.new(response.message) unless response.success?
+    return true unless @credit_card
+
+    response = (billing_key) ? Freemium.gateway.update(billing_key, @credit_card) : Freemium.gateway.store(@credit_card)
+    unless response.success?
+      self.update_attribute(:state_dsc, 'credit card error')
+      raise Freemium::CreditCardStorageError.new(response.message)       
+    end
+    
     self.billing_key = response.billing_key
-    self.cc_digits_last_4 = @cc.last_digits
-    self.cc_type = @cc.type
+    self.cc_digits_last_4 = @credit_card.last_digits
+    self.cc_type = @credit_card.type
     return true
   end
 
@@ -200,12 +227,13 @@ class FreemiumSubscription < ActiveRecord::Base
 
     # sends an invoice for the specified amount.
     Freemium.mailer.deliver_invoice(subscriber, self, value)
+    self.state_dsc = 'paid'
   end
 
   def set_paid_through
     self.paid_through ||= Date.today
   end
-
+  
   def cancel_in_remote_system
     Freemium.gateway.cancel(self.billing_key)
   end

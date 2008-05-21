@@ -27,6 +27,10 @@ Freemium.mailer = FreemiumMailer
 #for the client.  Defaults to 3
 Freemium.days_grace = 3
 
+#would you like to offer a free trial?  Change this to specify the
+#length of the trial.  Defaults to 0 days
+Freemium.days_free_trial = 30
+
 ##### SEE Freemium for additional choices
 
 if RAILS_ENV == 'production'

@@ -14,6 +14,14 @@ class FreemiumCouponReferral < ActiveRecord::Base
   def discount_rate_percent
     coupon ? coupon.discount_rate_percent : 100
   end
+  
+  def is_coupon?
+    !self.coupon_id.blank?
+  end
+  
+  def is_referral?
+    !self.referring_user_id.blank?    
+  end
 
   protected
 

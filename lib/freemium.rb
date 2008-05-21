@@ -30,6 +30,12 @@ module Freemium
       @days_grace ||= 3
     end
 
+    #days to offer in free trial
+    attr_writer :days_free_trial
+    def days_free_trial
+      @days_free_trial ||= 0
+    end
+    
     # What plan to assign to subscriptions that have expired. May be nil.
     attr_writer :expired_plan
     def expired_plan
