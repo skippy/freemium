@@ -37,9 +37,13 @@ module Freemium
     end
     
     # What plan to assign to subscriptions that have expired. May be nil.
-    attr_writer :expired_plan
     def expired_plan
+      return nil if @expired_plan == :nil
       @expired_plan ||= FreemiumSubscriptionPlan.find(:first, :conditions => "rate_cents = 0")
+    end
+
+    def expired_plan=(plan)
+      @expired_plan = plan.blank? ? :nil : plan
     end
     
     # force the referral_code to have a different format than a coupon code...
