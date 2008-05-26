@@ -142,8 +142,8 @@ class FreemiumSubscription < ActiveRecord::Base
   def expire!
     Freemium.activity_log[self] << "expired!" if Freemium.log?
     Freemium.mailer.deliver_expiration_notice(subscriber, self)
-    # downgrade to a free plan
-    self.subscription_plan = Freemium.expired_plan
+    # downgrade to a free plan, IF one is specified
+    self.subscription_plan = Freemium.expired_plan if Freemium.expired_plan
     self.state_dsc = 'expired'
     
     # cancel whatever in the gateway

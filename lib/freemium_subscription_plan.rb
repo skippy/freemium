@@ -15,6 +15,10 @@ class FreemiumSubscriptionPlan < ActiveRecord::Base
   validates_presence_of :name
   validates_presence_of :rate_cents
 
+  def free?
+    rate_cents == 0
+  end
+
   # returns the daily cost of this plan.
   def daily_rate
     yearly_rate / 365
