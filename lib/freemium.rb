@@ -23,6 +23,15 @@ module Freemium
         else raise "unknown billing_recurrence_mode: #{val}"
       end
     end
+    
+    # When the card is stored, it is normally not validated.  Enable this option to run a check
+    # against the issuing bank to validate the credit card.  This is done by running an authorization
+    # check for $1.
+    attr_writer :validate_card_during_store
+    def validate_card_during_store
+      @validate_card_during_store ||= true
+    end
+    
 
     # How many days to keep an account active after it fails to pay.
     attr_writer :days_grace

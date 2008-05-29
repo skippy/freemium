@@ -12,13 +12,22 @@ module Freemium
 
       # stores a credit card with the gateway.
       # should return a Freemium::Response
-      def store(credit_card, address = nil)
+      # possible options:
+      #  * :address => Freemium::Address object
+      #  * :ip => ip address to log at braintree
+      #  * :email => email address to log at braintree
+      def store(credit_card, options = {})
         raise MethodNotImplemented
       end
 
       # updates a credit card in the gateway.
       # should return a Freemium::Response
-      def update(billing_key, credit_card = nil, address = nil)
+      # possible options:
+      #  * :credit_card => Freemium::CreditCard object
+      #  * :address => Freemium::Address object
+      #  * :ip => ip address to log at braintree
+      #  * :email => email address to log at braintree
+      def update(billing_key, options = {})
         raise MethodNotImplemented
       end
 
@@ -45,9 +54,16 @@ module Freemium
 
       # charges money against the given billing key.
       # should return a Freemium::Transaction
-      def charge(billing_key, amount)
+      def charge(billing_key, amount, options = {})
         raise MethodNotImplemented
       end
+
+      # authorize a charge against the given billing key.
+      # shoulde return a Freemium::Transaction
+      def authorize(billing_key, amount)
+        raise MethodNotImplemented
+      end
+
     end
   end
 end

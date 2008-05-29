@@ -12,6 +12,13 @@ module Freemium
       def cancel(*args)
         args
       end
+      
+      def store(*args)
+        r = ActionController::TestResponse.new
+        r.assigns += args
+        r
+      end
+      
     end
   end
 end

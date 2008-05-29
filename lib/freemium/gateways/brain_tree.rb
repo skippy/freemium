@@ -27,43 +27,74 @@ module Freemium
       #def transactions(options = {}); end
 
       # Stores a card in SecureVault.
-      def store(credit_card, address = nil)
+      # possible options:
+      #  * :address => Freemium::Address object
+      #  * :ip => ip address to log at braintree
+      #  * :email => email address to log at braintree
+      def store(credit_card, options = {})
         p = Post.new(URL, {
           :username => self.username,
           :password => self.password,
           :customer_vault => "add_customer"
         })
         p.params.merge! params_for_credit_card(credit_card)
-        p.params.merge! params_for_address(address)         if address
+        p.params.merge! params_for_address(options[:address])
+        p.params.merge! params_for_customer_info(options)
         p.commit
         return p.response
       end
 
       # Updates a card in SecureVault.
-      def update(vault_id, credit_card = nil, address = nil)
+      # possible options:
+      #  * :credit_card => Freemium::CreditCard object
+      #  * :address => Freemium::Address object
+      #  * :ip => ip address to log at braintree
+      #  * :email => email address to log at braintree
+      def update(vault_id, options = {})
         p = Post.new(URL, {
           :username => self.username,
           :password => self.password,
           :customer_vault => "update_customer",
           :customer_vault_id => vault_id
         })
-        p.params.merge! params_for_credit_card(credit_card) if credit_card
-        p.params.merge! params_for_address(address)         if address
+        p.params.merge! params_for_credit_card(options[:credit_card])
+        p.params.merge! params_for_address(options[:address])
+        p.params.merge! params_for_customer_info(options)
         p.commit
         return p.response
       end
 
       # Manually charges a card in SecureVault. Called automatically as part of manual billing process.
-      def charge(vault_id, amount)
+      def charge(vault_id, amount, options = {})
         p = Post.new(URL, {
           :username => self.username,
           :password => self.password,
           :customer_vault_id => vault_id,
+          :type => 'sale',
           :amount => sprintf("%.2f", amount.cents.to_f / 100)
         })
+        p.params.merge! params_for_order_info(options)
+        p.params.merge! params_for_customer_info(options)
+        
         p.commit
         return Freemium::Transaction.new(:billing_key => vault_id, :amount => amount, :success => p.response.success?)
       end
+      
+      def authorize(vault_id, amount, options = {})
+        p = Post.new(URL, {
+          :username => self.username,
+          :password => self.password,
+          :customer_vault_id => vault_id,
+          :type => 'auth',
+          :amount => sprintf("%.2f", amount.cents.to_f / 100)
+        })
+        p.params.merge! params_for_order_info(options)
+        p.params.merge! params_for_customer_info(options)
+        
+        p.commit
+        return Freemium::Transaction.new(:billing_key => vault_id, :amount => amount, :success => p.response.success?)
+      end
+      
 
       # Removes a card from SecureVault. Called automatically when the subscription expires.
       def cancel(vault_id)
@@ -80,17 +111,21 @@ module Freemium
       protected
 
       def params_for_credit_card(card)
+        return {} if card.blank?
         params = {
           :payment => 'creditcard',
           :firstname => card.first_name,
           :lastname => card.last_name,
           :ccnumber => card.number,
-          :ccexp => ["%.2i" % card.month, ("%.4i" % card.year)[-2..-1]].join # MMYY
+          :ccexp => ["%.2i" % card.month, ("%.4i" % card.year)[-2..-1]].join # MMYY,
         }
+        params[:cvv] = card.verification_value if card.verification_value?
+        params
       end
 
       def params_for_address(address)
-        params = {
+        return {} if address.blank?
+        {
           :email => address.email,
           :address1 => address.street,
           :city => address.city,
@@ -98,6 +133,26 @@ module Freemium
           :zip => address.zip,
           :country => address.country # TODO: two digit code! (ISO-3166)
         }
+      end
+      
+      def params_for_customer_info(options)
+        params = {}
+        if options.has_key? :email
+          params[:email] = options[:email]
+        end
+
+        if options.has_key? :ip
+          params[:ipaddress] = options[:ip]
+        end   
+        params     
+      end
+      
+      def params_for_order_info(options)
+        params = {}
+        if options.has_key? :orderid
+          params[:orderid] = options[:order_id].to_s.gsub(/[^\w.]/, '')
+        end
+        params     
       end
 
       class Post

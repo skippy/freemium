@@ -59,7 +59,7 @@ module Freemium
             # validates_uniqueness_of get_referral_code_method, :case_sensitive => false, :allow_blank => true
             validates_format_of     get_referral_code_method, :with => /\A#{Freemium.referral_code_prefix}/, :message => "must start with '#{Freemium.referral_code_prefix}'", :allow_blank => true
             
-            after_save :save_referring_user!
+            # after_save :save_referring_user!
           end
           
           include Freemium::Acts::Subscriber::InstanceMethods
@@ -115,25 +115,32 @@ module Freemium
       module InstanceMethods
         
         def setup_subscription(plan)
-          build_subscription( :subscription_plan_id => (plan.is_a?(FreemiumSubscriptionPlan) ? plan.id : plan))
+          sub_plan_id = plan.is_a?(FreemiumSubscriptionPlan) ? plan.id : plan
+          if self.subscription.blank?
+            build_subscription(:subscription_plan_id => sub_plan_id)
+          else
+            self.subscription.subscription_plan_id = sub_plan_id
+          end
         end
         
         #TODO: it is vague and not defined that this will fail if subscription is not defined!
         #this is not really a good idea... the reason to do it is if you 
-        def setup_coupon_referral_code(code, error_field=:base)
-          if validate_coupon_referral_code(code, error_base)
-            build_coupon_referral_code(code)
-            return true
-          end
-          return false
-        end
+        # def setup_coupon_referral_code(code, error_field=:base)
+        #   if validate_coupon_referral_code(code, error_field)
+        #     create_coupon_referral_code(code)
+        #     return true
+        #   end
+        #   return false
+        # end
         
         #TODO: it is vague and not defined that this will fail if subscription is not defined!
-        def apply_coupon_referral_code!(code)
-          transaction do
-            build_coupon_referral_code(code)
-            self.save!
+        def apply_coupon_referral_code(code, error_field=:base)
+          if validate_coupon_referral_code(code, error_field)
+            return create_coupon_referral_code(code)
+            # subscription.save
+            # save_referring_user!
           end
+          return false
         end
         
         
@@ -168,7 +175,7 @@ module Freemium
             end
 
             if acts_as_subscriber_options[:disable_referral_when_method] && self.send(acts_as_subscriber_options[:disable_referral_when_method])
-              raise ReferralNotAppliedException, "You can no longer add a referral to your account."
+              raise ReferralNotAppliedException, "You can no longer add a referral code to your account."
             end
 
             #lets make sure they haven't used it already....
@@ -192,34 +199,35 @@ module Freemium
         end
         
         #build the appropriate relationship.  Assums that validations has already been run.
-        def build_coupon_referral_code(code)
+        def create_coupon_referral_code(code)
           return false if subscription.blank?
           if code.start_with?(Freemium.referral_code_prefix)            
             #apply to the subscription o the current user
-            subscription.coupon_referrals.build(:referring_user_id => u.id, :free_days => Freemium.referral_days_for_applied_user)
-            
+            u = eval("#{acts_as_subscriber_options[:find_referral_code]} '#{code}'") rescue nil
+            return false if u.blank?
+            subscription.coupon_referrals.create(:referring_user_id => u.id, :free_days => Freemium.referral_days_for_applied_user)
             #apply to the subscription of the referring user
             unless u.subscription.blank?
               #should never have a blank subscription, but just in 
               @referring_user = u
-              u.subscription.coupon_referrals.build(:referring_user_id => u.id, :free_days => Freemium.referral_days_for_referred_user)
+              u.subscription.coupon_referrals.create(:referring_user_id => self.id, :free_days => Freemium.referral_days_for_referred_user)
             end
           else
             c = FreemiumCoupon.find_by_coupon_code(code)
             if c
               #assume validation that this exists and is valid
-              subscription.coupon_referrals.build(:coupon_id => c.id, :free_days => c.span_num_days)
+              cr = subscription.coupon_referrals.create(:coupon_id => c.id, :free_days => c.span_num_days)
             end
           end          
         end
         
         #need to make sure that if a referrer code was passed in, that the person who's code it is also
         #gets a row in coupon_referrals.... so making sure it is persisted.
-        def save_referring_user!
-          return if @referring_user.blank?
-          @referring_user.subscription.save!
-          @referring_user = nil #so we don't call it multiple times...
-        end
+        # def save_referring_user!
+        #   return if @referring_user.blank?
+        #   @referring_user.subscription.save!
+        #   @referring_user = nil #so we don't call it multiple times...
+        # end
         
         #NOTE: 'check_coupon' and 'handle_coupon!' are a bit odd in how they are structured.
         # this is to work around a few rails bugs
@@ -239,9 +247,9 @@ module Freemium
                 
         def handle_coupon!
           return true if @coupon.blank?
-          build_coupon_referral_code(@coupon)
-          subscription.save
-          save_referring_user!
+          create_coupon_referral_code(@coupon)
+          # subscription.save
+          # save_referring_user!
           # success = setup_coupon_referral_code(@coupon, :coupon)
           # #do we REALLY want to put this this deep within the process?
           # #TODO: IF there is a transaction on top of the after_save transaction, this will not bubble up.

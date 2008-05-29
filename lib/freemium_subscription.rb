@@ -17,6 +17,8 @@ class FreemiumSubscription < ActiveRecord::Base
   belongs_to :subscriber, :polymorphic => true
   has_many :coupon_referrals, :class_name => 'FreemiumCouponReferral', :foreign_key => 'subscription_id'
   
+  composed_of :payment, :class_name => 'Money', :mapping => [ %w(payment_cents cents) ], :allow_nil => true
+  
   before_validation :set_paid_through
   before_save :process_cc
   before_create :setup_free_trial_period
@@ -50,9 +52,36 @@ class FreemiumSubscription < ActiveRecord::Base
   end
 
   # receives payment and saves the record
+  #
+  # extends the paid_through period according to how much money was received.
+  # when possible, avoids the days-per-month problem by checking if the money
+  # received is a multiple of the plan's rate.
+  #
+  # really, i expect the case where the received payment does not match the
+  # subscription plan's rate to be very much an edge case.
   def receive_payment!(value)
-    receive_payment(value)
+    self.paid_through = if value.cents % subscription_plan.rate.cents == 0
+      months_per_multiple = subscription_plan.yearly? ? 12 : 1
+      self.paid_through >> months_per_multiple * value.cents / subscription_plan.rate.cents
+    else
+      # edge case
+      self.paid_through + (value.cents / subscription_plan.daily_rate.cents)
+    end
+
+    # if they've paid again, then reset expiration
+    self.expires_on = nil
+    self.last_transaction_at = Time.now
+    self.comped = false
+    self.in_trial = false
+    self.payment_cents = value.cents
+
+    Freemium.activity_log[self] << "now paid through #{self.paid_through}" if Freemium.log?
+
+    self.state_dsc = 'paid'
     save!
+
+    # sends an invoice for the specified amount.
+    Freemium.mailer.deliver_invoice(subscriber, self, value)
   end
 
   ##
@@ -173,6 +202,10 @@ class FreemiumSubscription < ActiveRecord::Base
     @credit_card = cc.is_a?(Freemium::CreditCard) ? cc : Freemium::CreditCard.new(cc)
   end
   
+  def ip=(ip_address)
+    @ip = ip_address
+  end
+  
   def setup_free_trial_period
     self.paid_through = Date.today + Freemium.days_free_trial.days
     self.expires_on = nil
@@ -189,10 +222,15 @@ class FreemiumSubscription < ActiveRecord::Base
 
   def process_cc
     return true unless @credit_card
-
-    response = (billing_key) ? Freemium.gateway.update(billing_key, @credit_card) : Freemium.gateway.store(@credit_card)
+    options = {:credit_card => @credit_card, :ip => @ip, :billing_key => billing_key}
+    if Freemium.validate_card_during_store
+      options[:type] = 'auth'
+      options[:amount] = '1.00'
+    end
+    
+    response = (billing_key) ? Freemium.gateway.update(billing_key, options) : Freemium.gateway.store(@credit_card, options)
     unless response.success?
-      self.update_attribute(:state_dsc, 'credit card error')
+      self.state_dsc = response.message
       raise Freemium::CreditCardStorageError.new(response.message)       
     end
     
@@ -200,35 +238,6 @@ class FreemiumSubscription < ActiveRecord::Base
     self.cc_digits_last_4 = @credit_card.last_digits
     self.cc_type = @credit_card.type
     return true
-  end
-
-  # extends the paid_through period according to how much money was received.
-  # when possible, avoids the days-per-month problem by checking if the money
-  # received is a multiple of the plan's rate.
-  #
-  # really, i expect the case where the received payment does not match the
-  # subscription plan's rate to be very much an edge case.
-  def receive_payment(value)
-    self.paid_through = if value.cents % subscription_plan.rate.cents == 0
-      months_per_multiple = subscription_plan.yearly? ? 12 : 1
-      self.paid_through >> months_per_multiple * value.cents / subscription_plan.rate.cents
-    else
-      # edge case
-      self.paid_through + (value.cents / subscription_plan.daily_rate.cents)
-    end
-
-    # if they've paid again, then reset expiration
-    self.expires_on = nil
-    self.last_transaction_at = Time.now
-    self.comped = false
-    self.in_trial = false
-    self.payment_cents = value.cents
-
-    Freemium.activity_log[self] << "now paid through #{self.paid_through}" if Freemium.log?
-
-    # sends an invoice for the specified amount.
-    Freemium.mailer.deliver_invoice(subscriber, self, value)
-    self.state_dsc = 'paid'
   end
 
   def set_paid_through
