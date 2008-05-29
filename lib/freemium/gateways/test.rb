@@ -16,6 +16,7 @@ module Freemium
       def store(*args)
         r = ActionController::TestResponse.new
         r.assigns += args
+        r.headers['Status'] = '200'
         r
       end
       

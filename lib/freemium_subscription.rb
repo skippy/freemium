@@ -186,6 +186,19 @@ class FreemiumSubscription < ActiveRecord::Base
   def expired?
     expires_on and expires_on <= Date.today
   end
+  
+  
+  # let us know that when this period is over, that we will be able to process.  
+  # helpful to let us know if the user is still in a free trial, but they are set
+  # to go directly into a paid offering.
+  def ready_to_process?
+    !billing_key.blank?
+  end
+  
+  #let us know if we will be processing this in the next recurring billing call....
+  def going_to_process?
+    (billing_key && subscription_plan.rate_cents > 0 && (paid_through <= Date.today || expires_on < paid_through))
+  end
 
   # Simple assignment of a credit card. Note that this may not be
   # useful for your particular situation, especially if you need
@@ -233,7 +246,8 @@ class FreemiumSubscription < ActiveRecord::Base
       self.state_dsc = response.message
       raise Freemium::CreditCardStorageError.new(response.message)       
     end
-    
+
+    self.state_dsc = (billing_key) ? 'updating credit card' : 'saving credit card'
     self.billing_key = response.billing_key
     self.cc_digits_last_4 = @credit_card.last_digits
     self.cc_type = @credit_card.type
