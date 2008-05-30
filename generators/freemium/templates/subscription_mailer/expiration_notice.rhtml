@@ -1,8 +1,21 @@
-Your subscription has expired.
+Hi there,
+
+Your SweetSpot account has expired.  However, you will be able to log in, access your information, and use SweetSpot, but there will be some limitations.  For example, you'll still be able to see your information and manually enter and export it, but you won't be able to fetch glucose numbers from your monitor with SweetSpot.
+
+<% if @subscription.cc_digits_last_4 -%>
+SweetSpot was unable to process your credit card (xxxx-xxxx-xxxx-<%= @subscription.cc_digits_last_4 -%>).
+Please visit:
+  https://www.SweetSpot.dm/account
+to update your credit card information and we'll try again!
+<% else -%>
+Click here to upgrade your account:
+  UPGRADE URL?
+<% end -%>
 
 QUESTIONS OR CONCERNS?
-Respond to this email if you have any billing questions.
+As always, let us know if you have questions or concerns.
 
-Thank you again for your business!
-The SweetSpot Team
+Thank you,
+Adam Greene
+SweetSpot Founder
 https://www.SweetSpot.dm

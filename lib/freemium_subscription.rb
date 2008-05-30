@@ -134,7 +134,7 @@ class FreemiumSubscription < ActiveRecord::Base
 
   # if paid through today, returns zero
   def remaining_days
-    (self.paid_through - Date.today).to_i rescue 0
+    (self.paid_through.to_date - Date.today).to_i rescue 0
   end
 
   ##
@@ -197,7 +197,7 @@ class FreemiumSubscription < ActiveRecord::Base
   
   #let us know if we will be processing this in the next recurring billing call....
   def going_to_process?
-    (billing_key && subscription_plan.rate_cents > 0 && (paid_through <= Date.today || expires_on < paid_through))
+    (billing_key && subscription_plan.rate_cents > 0 && (paid_through <= Date.today || (expires_on && expires_on < paid_through)))
   end
 
   # Simple assignment of a credit card. Note that this may not be
@@ -240,14 +240,13 @@ class FreemiumSubscription < ActiveRecord::Base
       options[:type] = 'auth'
       options[:amount] = '1.00'
     end
-    
     response = (billing_key) ? Freemium.gateway.update(billing_key, options) : Freemium.gateway.store(@credit_card, options)
     unless response.success?
       self.state_dsc = response.message
       raise Freemium::CreditCardStorageError.new(response.message)       
     end
 
-    self.state_dsc = (billing_key) ? 'updating credit card' : 'saving credit card'
+    self.state_dsc = (billing_key) ? 'updated credit card' : 'saved credit card'
     self.billing_key = response.billing_key
     self.cc_digits_last_4 = @credit_card.last_digits
     self.cc_type = @credit_card.type

@@ -1,13 +1,24 @@
+Hi there,
+
+Your SweetSpot account is about to lapse<% if @subscription.remaining_days > 0 -%> (in <%= @subscription.remaining_days %> days) <% end -%>.  
+
+When this happens, you will still be able to log in, access your information, and use SweetSpot, but there will be some limitations.  For example, you'll still be able to see your log, but you won't be able to fetch glucose numbers from your monitor with SweetSpot until you upgrade your account.
+
+<% if @subscription.cc_digits_last_4 -%>
 SweetSpot was unable to process your credit card (xxxx-xxxx-xxxx-<%= @subscription.cc_digits_last_4 -%>).
-
-Your subscription is set to expire in <%= @subscription.remaining_days %> days.  Please visit:
+Please visit:
   https://www.SweetSpot.dm/account
-to update your credit card information.  
-
+to update your credit card information.
+<% else -%>
+Click here to upgrade your account:
+  UPGRADE_URL?
+<% end -%>
 
 QUESTIONS OR CONCERNS?
-Respond to this email if you have any billing questions.
+As always, let us know if you have questions or concerns.
 
-Thank you again for your business!
-The SweetSpot Team
+We look forward to working with you!
+
+Adam Greene
+SweetSpot Founder
 https://www.SweetSpot.dm

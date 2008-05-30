@@ -64,6 +64,55 @@ module Freemium
         raise MethodNotImplemented
       end
 
+
+      class Post
+        attr_accessor :url
+        attr_accessor :params
+        attr_reader :response
+
+        def initialize(url, params = {})
+          self.url = url
+          self.params = params
+        end
+
+        #TODO: this should be abstracted into brainTree...it is specific to them
+        def commit
+          data = parse(post)
+          # from BT API: 1 means approved, 2 means declined, 3 means error
+          success = data['response'].to_i == 1
+          @response = Freemium::Response.new(success, data)
+          @response.billing_key = data['customer_vault_id']
+          @response.message = data['responsetext']
+          return self
+        end
+
+        protected
+
+        # BrainTree returns a body of parameters in GET query format, so convert that into a simple hash.
+        def parse(data)
+          returning({}) do |results|
+            data.split('&').each do |pair|
+              key, value = pair.split('=')
+              results[key] = value
+            end
+          end
+        end
+
+        # cf. ActiveMerchant's PostsData module.
+        def post
+          uri   = URI.parse(self.url)
+
+          http = Net::HTTP.new(uri.host, uri.port)
+          http.open_timeout = 10
+          http.read_timeout = 10
+          http.use_ssl      = true
+          http.verify_mode  = OpenSSL::SSL::VERIFY_NONE
+
+          data = self.params.collect { |k, v| "#{k}=#{CGI.escape(v.to_s)}" }.join("&")
+          http.post(uri.request_uri, data).body
+        end
+      end
+
     end
   end
 end
