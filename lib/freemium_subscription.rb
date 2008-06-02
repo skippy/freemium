@@ -243,7 +243,7 @@ class FreemiumSubscription < ActiveRecord::Base
     response = (billing_key) ? Freemium.gateway.update(billing_key, options) : Freemium.gateway.store(@credit_card, options)
     unless response.success?
       self.state_dsc = response.message
-      raise Freemium::CreditCardStorageError.new(response.message)       
+      raise Freemium::CreditCardStorageError.new(response.message, response)       
     end
 
     self.state_dsc = (billing_key) ? 'updated credit card' : 'saved credit card'

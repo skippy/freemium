@@ -21,7 +21,6 @@ module Freemium
     # configure the username and password to be "demo" and "password", respectively.
     class BrainTree < Base
       URL = 'https://secure.braintreepaymentgateway.com/api/transact.php'
-      attr_accessor :username, :password
 
       # using BrainTree's recurring billing is not possible until I have their reporting API
       #def transactions(options = {}); end

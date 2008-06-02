@@ -1,5 +1,14 @@
 module Freemium
-  class CreditCardStorageError < RuntimeError; end
+  class CreditCardStorageError < RuntimeError
+    attr_reader :response
+
+    def initialize(msg, response = nil)
+      super(msg)
+      @response = response
+    end
+    
+    
+  end
 
   class << self
     # Lets you configure which ActionMailer class contains appropriate

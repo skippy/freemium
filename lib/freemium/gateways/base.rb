@@ -1,6 +1,8 @@
 module Freemium
   module Gateways
     class Base #:nodoc:
+      attr_accessor :username, :password
+      
       # cancels the subscription identified by the given billing key.
       # this might mean removing it from the remote system, or halting the remote
       # recurring billing.
