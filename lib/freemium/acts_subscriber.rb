@@ -201,7 +201,9 @@ module Freemium
         #build the appropriate relationship.  Assums that validations has already been run.
         def create_coupon_referral_code(code)
           return false if subscription.blank?
-          if code.start_with?(Freemium.referral_code_prefix)            
+          return true if @old_code == code
+          @old_code = code
+          if code.start_with?(Freemium.referral_code_prefix)
             #apply to the subscription o the current user
             u = eval("#{acts_as_subscriber_options[:find_referral_code]} '#{code}'") rescue nil
             return false if u.blank?
