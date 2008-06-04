@@ -1,3 +1,5 @@
+require 'rails_generator/secret_key_generator'
+
 module Freemium
   class ReferralNotAppliedException < Exception #:nodoc:
   end
@@ -89,10 +91,10 @@ module Freemium
         #force referral_code to start with 'ref' so we can differentiate between a coupon and a referral code..
         #allows ability to combine coupon and referral code into one field...easier for users.
         def setup_referral_code
-          return true unless self.send(acts_as_subscriber_options[:get_referral_code]).blank?
-          require 'rails_generator/secret_key_generator'
+          # return true unless self.send(acts_as_subscriber_options[:get_referral_code]).blank?
           init_token_size = 7
           token = self.class.generate_referral_code(init_token_size)
+
           # eval("self.#{acts_as_subscriber_options[:set_referral_code]} token")
           self.send(acts_as_subscriber_options[:set_referral_code], token)
           counter = 0
@@ -103,7 +105,7 @@ module Freemium
           
           # u = eval("#{acts_as_subscriber_options[:find_referral_code]} '#{code}'") rescue nil
           # eval("#{acts_as_subscriber_options[:find_referral_code]} '#{code}'")
-          while counter < 10 && (eval("#{acts_as_subscriber_options[:find_referral_code]} '#{self.send(acts_as_subscriber_options[:get_referral_code])}'").blank?)
+          while counter < 10 && !eval("#{acts_as_subscriber_options[:find_referral_code]} '#{self.send(acts_as_subscriber_options[:get_referral_code])}'").blank?
           # while counter < 10 && (finder_class.find(:first, :select => 1, :conditions => conditions))
             token = self.class.generate_referral_code(init_token_size + counter)
             self.send(acts_as_subscriber_options[:set_referral_code], token)
