@@ -3,6 +3,10 @@ module Freemium
     class Base #:nodoc:
       attr_accessor :username, :password
       
+      def in_test_mode?
+        false
+      end
+      
       # cancels the subscription identified by the given billing key.
       # this might mean removing it from the remote system, or halting the remote
       # recurring billing.
@@ -80,6 +84,7 @@ module Freemium
         #TODO: this should be abstracted into brainTree...it is specific to them
         def commit
           data = parse(post)
+          Freemium.log_test_msg("RESPONSE\n  data: #{data.inspect}")
           # from BT API: 1 means approved, 2 means declined, 3 means error
           success = data['response'].to_i == 1
           @response = Freemium::Response.new(success, data)
@@ -111,6 +116,7 @@ module Freemium
           http.verify_mode  = OpenSSL::SSL::VERIFY_NONE
 
           data = self.params.collect { |k, v| "#{k}=#{CGI.escape(v.to_s)}" }.join("&")
+          Freemium.log_test_msg("POST\n  url:   #{self.url}\n  query: #{data}")
           http.post(uri.request_uri, data).body
         end
       end

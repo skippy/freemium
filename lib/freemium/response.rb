@@ -9,8 +9,16 @@ module Freemium
     # the related billing key, if appropriate
     attr_accessor :billing_key
 
+    cattr_writer :modify_response_msg_proc
+    @@cleaned_msg = nil
+
     def initialize(success, raw_data = {})
       @success, @raw_data = success, raw_data
+    end
+    
+    def cleaned_message
+      return @message if @@modify_response_msg_proc.blank?
+      @@cleaned_msg ||= @@modify_response_msg_proc.call(self)
     end
 
     def success?

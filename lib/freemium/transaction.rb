@@ -7,6 +7,8 @@ module Freemium
     attr_accessor :amount
     # if the transaction was a success or not (default is false)
     attr_accessor :success
+    #holds the Freemium::Response
+    attr_accessor :response
 
     def initialize(options = {})
       options.each do |(k, v)|
@@ -18,7 +20,8 @@ module Freemium
     alias_method :success?, :success
 
     def to_s
-      "#{success? ? "billed" : "failed to bill"} key #{billing_key} for #{amount.format}"
+      extra_info = response.blank? ? '' : "Other info: response_code=#{response['response_code']}, orderid=#{response['orderid']}, avsresponse=#{response['avsresponse']}, transactionid=#{response['transactionid']}, responsetext=#{response['responsetext']}, type=#{response['type']}"
+      "#{success? ? "billed" : "failed to bill"} key #{billing_key} for #{amount.format}.  #{extra_info}"
     end
   end
 end

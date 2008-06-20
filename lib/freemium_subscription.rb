@@ -75,7 +75,7 @@ class FreemiumSubscription < ActiveRecord::Base
     self.in_trial = false
     self.payment_cents = value.cents
 
-    Freemium.activity_log[self] << "now paid through #{self.paid_through}" if Freemium.log?
+    Freemium.log_subscription_msg(self, "now paid through #{self.paid_through}")
 
     self.state_dsc = 'paid'
     save!
@@ -109,7 +109,7 @@ class FreemiumSubscription < ActiveRecord::Base
       saved = self.save        
     end
     if saved
-      Freemium.activity_log[self] << "comp'ed through #{self.paid_through}" if Freemium.log?
+      Freemium.log_subscription_msg(self, "comp'ed through #{self.paid_through}")
       #do we want to setup an email to send out?
       # sends an invoice for the specified amount.
       # Freemium.mailer.deliver_invoice(subscriber, self, value)
@@ -154,22 +154,24 @@ class FreemiumSubscription < ActiveRecord::Base
   ## Expiration
   ##
 
-  # expires all subscriptions that have been pastdue for too long (accounting for grace)
+  # expires all subscriptions that have been pastdue for too long (accounting for grace), also making sure we
+  # don't call it multiple times
   def self.expire
-    find(:all, :conditions => ['expires_on >= paid_through AND expires_on <= ?', Date.today]).each(&:expire!)
+    find(:all, :conditions => ["(state_dsc is null OR state_dsc != 'expired') AND expires_on >= paid_through AND expires_on <= ?", Date.today]).each(&:expire!)
   end
 
   # sets the expiration for the subscription based on today and the configured grace period.
   def expire_after_grace!
+    self.state_dsc = 'expiring soon'
     self.expires_on = [Date.today, paid_through].max + Freemium.days_grace
-    Freemium.activity_log[self] << "now set to expire on #{self.expires_on}" if Freemium.log?
+    Freemium.log_subscription_msg(self, "now set to expire on #{self.expires_on}")
     Freemium.mailer.deliver_expiration_warning(subscriber, self)
-    save!
+    save_without_revision!
   end
 
   # sends an expiration email, then downgrades to a free plan
   def expire!
-    Freemium.activity_log[self] << "expired!" if Freemium.log?
+    Freemium.log_subscription_msg(self, "expired!")
     Freemium.mailer.deliver_expiration_notice(subscriber, self)
     # downgrade to a free plan, IF one is specified
     self.subscription_plan = Freemium.expired_plan if Freemium.expired_plan
@@ -241,15 +243,15 @@ class FreemiumSubscription < ActiveRecord::Base
       options[:amount] = '1.00'
     end
     response = (billing_key) ? Freemium.gateway.update(billing_key, options) : Freemium.gateway.store(@credit_card, options)
-    unless response.success?
-      self.state_dsc = response.message
-      raise Freemium::CreditCardStorageError.new(response.message, response)       
-    end
+    Freemium.log_subscription_msg(self, "Processing credit card (#{Freemium.validate_card_during_store ? "authorized cc for 1.00" : 'just saving cc'}).  Success? #{response.success?}.  code: #{response['response_code']}, msg: '#{response.message}'")
+
+    raise Freemium::CreditCardStorageError.new(response.cleaned_message, response) unless response.success?   
 
     self.state_dsc = (billing_key) ? 'updated credit card' : 'saved credit card'
     self.billing_key = response.billing_key
     self.cc_digits_last_4 = @credit_card.last_digits
     self.cc_type = @credit_card.type
+    self.expires_on = nil
     return true
   end
 

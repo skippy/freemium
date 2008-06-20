@@ -7,7 +7,21 @@ module Freemium
       yield
       @activity_log = nil
     end
-
+    
+    def log_subscription_msg(subscription, msg)
+      RAILS_DEFAULT_LOGGER.debug "FreemiumLogger:: (subscription ##{subscription.id}): #{msg}"
+      return unless log?
+      activity_log[subscription] << msg
+    end
+    
+    def log_test_msg(msg)
+      RAILS_DEFAULT_LOGGER.debug("FreemiumLog (TEST MSG):: #{msg}") if Freemium.gateway.in_test_mode?
+    end
+    
+    def log_msg(msg)
+      RAILS_DEFAULT_LOGGER.debug("FreemiumLog:: #{msg}") if Freemium.gateway.in_test_mode?
+    end
+    
     def log?
       admin_report_recipients and @activity_log
     end

@@ -11,12 +11,12 @@ module Freemium
       self.class.transaction do
         return if used_comp?
         if billing_key.blank?
-          expire_after_grace!
+          expire_after_grace! #if self.expires_on.blank? || self.expires_on <= Date.today
           return 
         end
         # attempt to bill (use gateway)
         transaction = Freemium.gateway.charge(billing_key, subscription_plan.rate)
-        Freemium.activity_log[self] << transaction if Freemium.log?
+        Freemium.log_subscription_msg(self, transaction)
         transaction.success? ? receive_payment!(transaction.amount) : expire_after_grace!
       end
     end
@@ -48,7 +48,8 @@ module Freemium
         find(
           :all,
           :include => :subscription_plan,
-          :conditions => ['freemium_subscription_plans.rate_cents > 0 AND paid_through <= ? AND (expires_on IS NULL or expires_on < paid_through)', date.to_date]
+          # :conditions => ['freemium_subscription_plans.rate_cents > 0 AND paid_through <= ?', date.to_date]
+          :conditions => ["freemium_subscription_plans.rate_cents > 0 AND paid_through <= ? AND (state_dsc is null OR state_dsc != 'expired') AND (expires_on IS NULL or expires_on <= paid_through)", date.to_date]
         )
       end
     end

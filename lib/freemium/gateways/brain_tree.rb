@@ -21,6 +21,25 @@ module Freemium
     # configure the username and password to be "demo" and "password", respectively.
     class BrainTree < Base
       URL = 'https://secure.braintreepaymentgateway.com/api/transact.php'
+      
+      #do some cleanup of the response msg...
+      Freemium::Response.modify_response_msg_proc = Proc.new do |response|  
+        err_msg = response.message.capitalize
+        if err_msg =~ /INVALID CARD NUMBER/i
+          # since we are using the ActiveMerchant cc processing class, which catches most 
+          # invalid number errors, when this occurs on the server it usually means the ccnumber
+          # is valid but the associated month/year expiration values are not
+          err_msg += ".  Please check the month/year expiration date."
+        end
+        # clean up the error msg if it comes in with someting like [14-12005] in the error msg
+        # keep that code...but make it a bit more paletable.
+        err_msg.gsub!(/\[(.+?)\]/){|s| "[ error code: #{$1}]"}
+        response.message = err_msg        
+      end
+
+      def in_test_mode?
+        username == 'demo' && password == 'password'
+      end
 
       # using BrainTree's recurring billing is not possible until I have their reporting API
       #def transactions(options = {}); end
@@ -36,9 +55,11 @@ module Freemium
           :password => self.password,
           :customer_vault => "add_customer"
         })
+        Freemium.log_msg("store cc: options=#{options.inspect}")
         p.params.merge! params_for_credit_card(credit_card)
         p.params.merge! params_for_address(options[:address])
         p.params.merge! params_for_customer_info(options)
+        p.params.merge! params_for_preauth(options)
         p.commit
         return p.response
       end
@@ -56,9 +77,11 @@ module Freemium
           :customer_vault => "update_customer",
           :customer_vault_id => vault_id
         })
+        Freemium.log_msg("update cc: options=#{options.inspect}")
         p.params.merge! params_for_credit_card(options[:credit_card])
         p.params.merge! params_for_address(options[:address])
         p.params.merge! params_for_customer_info(options)
+        p.params.merge! params_for_preauth(options)
         p.commit
         return p.response
       end
@@ -72,11 +95,12 @@ module Freemium
           :type => 'sale',
           :amount => sprintf("%.2f", amount.cents.to_f / 100)
         })
+        Freemium.log_msg("charge cc: amount=#{amount}, options=#{options.inspect}")
         p.params.merge! params_for_order_info(options)
         p.params.merge! params_for_customer_info(options)
         
         p.commit
-        return Freemium::Transaction.new(:billing_key => vault_id, :amount => amount, :success => p.response.success?)
+        return Freemium::Transaction.new(:billing_key => vault_id, :amount => amount, :success => p.response.success?, :response => p.response)
       end
       
       def authorize(vault_id, amount, options = {})
@@ -87,13 +111,13 @@ module Freemium
           :type => 'auth',
           :amount => sprintf("%.2f", amount.cents.to_f / 100)
         })
+        Freemium.log_msg("authorize cc: amount=#{amount}, options=#{options.inspect}")
         p.params.merge! params_for_order_info(options)
         p.params.merge! params_for_customer_info(options)
         
         p.commit
-        return Freemium::Transaction.new(:billing_key => vault_id, :amount => amount, :success => p.response.success?)
+        return Freemium::Transaction.new(:billing_key => vault_id, :amount => amount, :success => p.response.success?, :response => p.response)
       end
-      
 
       # Removes a card from SecureVault. Called automatically when the subscription expires.
       def cancel(vault_id)
@@ -108,6 +132,14 @@ module Freemium
       end
 
       protected
+      
+      def params_for_preauth(preauth)
+        return {} if preauth.blank?
+        {
+          :type => preauth[:type],
+          :amount => preauth[:amount]
+        }
+      end
 
       def params_for_credit_card(card)
         return {} if card.blank?
