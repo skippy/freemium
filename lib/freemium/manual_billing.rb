@@ -13,7 +13,7 @@ module Freemium
         if subscriber.blank?
           # something happened where the attached user no longer exists....
           # do not do anything, but log it so the admin can decide what to do?
-          Freemium.log_subscription_msg(self, "Subscriber (id: #{subscriber_id}, type: #{subscriber_type}) is no longer found")
+          Freemium.log_subscription_msg(self, "Subscriber (id: #{subscriber_id}, type: #{subscriber_type}) is no longer found.  Deleting this subscription (id: #{self.id}).")
           self.destroy
           return
         end
