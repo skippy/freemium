@@ -10,6 +10,14 @@ module Freemium
     def charge!
       self.class.transaction do
         return if used_comp?
+        if subscriber.blank?
+          # something happened where the attached user no longer exists....
+          # do not do anything, but log it so the admin can decide what to do?
+          Freemium.log_subscription_msg(self, "Subscriber (id: #{subscriber_id}, type: #{subscriber_type}) is no longer found")
+          self.destroy
+          return
+        end
+        
         if billing_key.blank?
           expire_after_grace! #if self.expires_on.blank? || self.expires_on <= Date.today
           return 
