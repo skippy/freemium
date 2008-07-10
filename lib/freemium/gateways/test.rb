@@ -20,6 +20,13 @@ module Freemium
         return p.response
       end
       
+      def update(billing_key, options = {})
+        p = Post.new('test.host')
+        p.response_body = options.collect{|k,v| "#{k}=#{v}"}.join("&"){|k,v| }
+        p.commit
+        return p.response
+      end
+      
     end
     
     class Base

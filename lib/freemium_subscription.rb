@@ -248,9 +248,14 @@ class FreemiumSubscription < ActiveRecord::Base
     raise Freemium::CreditCardStorageError.new(response.cleaned_message, response) unless response.success?   
 
     self.state_dsc = (billing_key) ? 'updated credit card' : 'saved credit card'
+    
     self.billing_key = response.billing_key
     self.cc_digits_last_4 = @credit_card.last_digits
     self.cc_type = @credit_card.type
+    # IF expired, lets reset their paid_through date...
+    # this is for the case where they wait, say a week, after they receive their expired email
+    # and if they haven't previously paid, lets not start the payment period a week ago!
+    self.paid_through = Date.today if expired?
     self.expires_on = nil
     return true
   end

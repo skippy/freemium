@@ -55,7 +55,9 @@ module Freemium
           :password => self.password,
           :customer_vault => "add_customer"
         })
-        Freemium.log_msg("store cc: options=#{options.inspect}")
+        print_options = options.clone
+        print_options[:credit_card] = '**HIDDEN**'
+        Freemium.log_msg("store cc: options=#{print_options.inspect}")
         p.params.merge! params_for_credit_card(credit_card)
         p.params.merge! params_for_address(options[:address])
         p.params.merge! params_for_customer_info(options)
@@ -77,7 +79,9 @@ module Freemium
           :customer_vault => "update_customer",
           :customer_vault_id => vault_id
         })
-        Freemium.log_msg("update cc: options=#{options.inspect}")
+        print_options = options.clone
+        print_options[:credit_card] = '**HIDDEN**'
+        Freemium.log_msg("update cc: options=#{print_options.inspect}")
         p.params.merge! params_for_credit_card(options[:credit_card])
         p.params.merge! params_for_address(options[:address])
         p.params.merge! params_for_customer_info(options)
