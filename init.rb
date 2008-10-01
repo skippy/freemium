@@ -7,7 +7,7 @@ rescue LoadError
 end 
 
 # and the ActiveMerchant CreditCard object (vendor'd)
-Dependencies.load_paths << File.expand_path(File.join(File.dirname(__FILE__), 'vendor', 'active_merchant', 'lib'))
+ActiveSupport::Dependencies.load_paths << File.expand_path(File.join(File.dirname(__FILE__), 'vendor', 'active_merchant', 'lib'))
 
 require 'freemium'
 require 'freemium/acts_subscriber'
