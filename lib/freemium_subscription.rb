@@ -98,7 +98,8 @@ class FreemiumSubscription < ActiveRecord::Base
     saved = false
     transaction do
       comp.update_attribute(:applied_on, Time.now)
-      self.paid_through = Time.now + comp.free_days.days
+      start_time = (self.paid_through && self.paid_through > Date.today) ? self.paid_through : Time.now
+      self.paid_through = start_time + comp.free_days.days
       self.comped = true
       self.in_trial = false
       # if they've paid again, then reset expiration
@@ -115,6 +116,19 @@ class FreemiumSubscription < ActiveRecord::Base
       # Freemium.mailer.deliver_invoice(subscriber, self, value)
     end
     saved
+  end
+  
+  def give_complementary_subscription_period!(free_time=30.days)
+    start_time = (self.paid_through && self.paid_through > Date.today) ? self.paid_through : Time.now
+    self.paid_through = start_time + free_time
+    self.comped = true
+    self.in_trial = false
+    # if they've paid again, then reset expiration
+    self.expires_on = nil
+    self.payment_cents = 0
+    self.last_transaction_at = Time.now
+    self.state_dsc = "Complementary #{free_time / 1.day} free days."
+    self.save!
   end
   
   def paid_through=(time)
@@ -186,7 +200,7 @@ class FreemiumSubscription < ActiveRecord::Base
   end
 
   def expired?
-    expires_on and expires_on <= Date.today
+    (expires_on and expires_on <= Date.today) ? true : false
   end
   
   
